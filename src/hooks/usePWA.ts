@@ -67,14 +67,21 @@ export function usePWA() {
                   if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
                     console.log("[PWA] New version ready for activation");
                     setHasUpdate(true);
+                    // Automatically inform worker to skip waiting if desirable
+                    newWorker.postMessage({ type: "SKIP_WAITING" });
                   }
                 });
               }
             });
 
             // Listen for controllerchange
+            let refreshing = false;
             navigator.serviceWorker.addEventListener("controllerchange", () => {
               console.log("[PWA] Service Worker controller changed - new version active");
+              if (!refreshing) {
+                refreshing = true;
+                window.location.reload();
+              }
             });
           })
           .catch((error) => {
