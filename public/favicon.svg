@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b0f17"/>
+      <stop offset="50%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#051b14"/>
+    </linearGradient>
+
+    <!-- Outer Glow Gradient -->
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="30%" stop-color="#1f6feb"/>
+      <stop offset="70%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#00c853"/>
+    </linearGradient>
+
+    <!-- Euro Arc Gradient -->
+    <linearGradient id="euroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa"/>
+      <stop offset="50%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+
+    <!-- Real & Growth Gradient -->
+    <linearGradient id="realGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="40%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#00c853"/>
+    </linearGradient>
+
+    <!-- Gold Accent Gradient -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+
+    <!-- Drop Shadows and Glow Filter -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Base App Icon Container with Rounded Squircle -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+  
+  <!-- Subtle Glowing Border Frame -->
+  <rect x="16" y="16" width="480" height="480" rx="98" fill="none" stroke="url(#borderGrad)" stroke-width="5" stroke-opacity="0.85"/>
+  
+  <!-- Ambient background glow behind emblem -->
+  <circle cx="210" cy="256" r="140" fill="#1f6feb" opacity="0.18" filter="url(#glow)"/>
+  <circle cx="310" cy="256" r="140" fill="#00c853" opacity="0.18" filter="url(#glow)"/>
+
+  <!-- Main Emblem Group -->
+  <g filter="url(#shadow)">
+    <!-- 1. The Brazilian Real "R" vertical spine & pillar -->
+    <path d="M152 128 C152 118 160 110 170 110 L198 110 C208 110 216 118 216 128 L216 384 C216 394 208 402 198 402 L170 402 C160 402 152 394 152 384 Z" fill="url(#realGrad)"/>
+
+    <!-- 2. The Real "R" Upper Loop that merges into the Euro Arc -->
+    <path d="M196 110 L274 110 C322 110 354 136 354 182 C354 226 322 250 274 250 L196 250 Z" fill="none" stroke="url(#realGrad)" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- 3. The Euro "C" Curved Spine expanding dynamically to the right -->
+    <path d="M372 168 C352 144 316 126 270 126 C195 126 142 182 142 256 C142 330 195 386 270 386 C320 386 358 364 380 338" fill="none" stroke="url(#euroGrad)" stroke-width="46" stroke-linecap="round"/>
+
+    <!-- 4. The Real "R" Dynamic Leg extending diagonally downward with growth arrow finish -->
+    <path d="M260 236 L344 384 C349 393 359 398 370 398 L392 398 C406 398 414 382 406 370 L328 236 Z" fill="url(#realGrad)"/>
+
+    <!-- 5. Dual Euro Currency Crossbars (with Gold/Cyan glow) -->
+    <!-- Upper Crossbar -->
+    <rect x="100" y="218" width="220" height="28" rx="14" fill="url(#goldGrad)" filter="url(#glow)"/>
+    <rect x="100" y="218" width="220" height="28" rx="14" fill="url(#goldGrad)"/>
+
+    <!-- Lower Crossbar -->
+    <rect x="100" y="272" width="220" height="28" rx="14" fill="url(#goldGrad)" filter="url(#glow)"/>
+    <rect x="100" y="272" width="220" height="28" rx="14" fill="url(#goldGrad)"/>
+
+    <!-- 6. Central Currency Spark / Diamond (Real & Euro meeting point) -->
+    <polygon points="350,118 360,136 378,146 360,156 350,174 340,156 322,146 340,136" fill="#67e8f9"/>
+    <polygon points="390,320 396,332 408,338 396,344 390,356 384,344 372,338 384,332" fill="#34d399"/>
+  </g>
+</svg>
