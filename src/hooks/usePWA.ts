@@ -71,6 +71,11 @@ export function usePWA() {
                 });
               }
             });
+
+            // Listen for controllerchange
+            navigator.serviceWorker.addEventListener("controllerchange", () => {
+              console.log("[PWA] Service Worker controller changed - new version active");
+            });
           })
           .catch((error) => {
             console.warn("[PWA] Service Worker registration failed:", error);

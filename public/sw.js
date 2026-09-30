@@ -1,7 +1,8 @@
 // DinhEuro Finanças - Progressive Web App Service Worker
-const CACHE_NAME = "dinheuro-v3";
+const CACHE_NAME = "dinheuro-v4";
 const OFFLINE_URL = "/";
 
+// Only precache core shell static assets (never APIs or financial quotes)
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -14,7 +15,7 @@ const STATIC_ASSETS = [
   "/apple-touch-icon.png",
 ];
 
-// 1. Install Event: Pre-cache App Shell
+// 1. Install Event: Pre-cache App Shell and skip waiting immediately
 self.addEventListener("install", (event) => {
   self.skipWaiting();
   event.waitUntil(
@@ -37,7 +38,7 @@ self.addEventListener("activate", (event) => {
         return Promise.all(
           cacheNames.map((cache) => {
             if (cache !== CACHE_NAME) {
-              console.log("[SW] Cleaning up stale cache version:", cache);
+              console.log("[SW] Deleting old cache version:", cache);
               return caches.delete(cache);
             }
           })
@@ -48,7 +49,7 @@ self.addEventListener("activate", (event) => {
 });
 
 // 3. Fetch Event Strategy:
-// - API calls (/api/*): STRICT Network First (bypass cache on network, never serve stale cache when online)
+// - API calls (/api/*): STRICT Network First with no-store bypass (NEVER cached in static cache)
 // - Static assets & navigation: Stale-While-Revalidate with offline fallback
 self.addEventListener("fetch", (event) => {
   const request = event.request;
@@ -59,23 +60,16 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // A. Handle API Requests: STRICT NETWORK FIRST
-  // Always fetches fresh live market data directly from network when online.
+  // A. Handle API Requests: STRICT NETWORK FIRST (Never store quotes in static cache)
   if (url.pathname.startsWith("/api/")) {
     event.respondWith(
       fetch(request, { cache: "no-store" })
         .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            // Optionally cache fresh snapshot for offline emergencies only
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
+          // Deliver live real-time network response directly without static caching
           return networkResponse;
         })
-        .catch(async () => {
-          // Network failed (offline) -> fallback to last cached response if available
-          const cached = await caches.match(request);
-          if (cached) return cached;
+        .catch(() => {
+          // Network failed (offline)
           return new Response(
             JSON.stringify({
               offline: true,
@@ -118,7 +112,7 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-// 4. Message Handler for updates
+// 4. Message Handler for instant updates
 self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
