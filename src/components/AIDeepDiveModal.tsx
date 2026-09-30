@@ -22,9 +22,13 @@ export const AIDeepDiveModal: React.FC<AIDeepDiveModalProps> = ({ topic, onClose
     setContent("");
     setChatMessages([]);
 
-    fetch("/api/market-ai/deep-dive", {
+    fetch(`/api/market-ai/deep-dive?t=${Date.now()}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      },
       body: JSON.stringify({
         topicTitle: topic.title,
         context: topic.detailedContext,
@@ -72,9 +76,13 @@ export const AIDeepDiveModal: React.FC<AIDeepDiveModalProps> = ({ topic, onClose
     setChatLoading(true);
 
     try {
-      const res = await fetch("/api/market-ai/chat", {
+      const res = await fetch(`/api/market-ai/chat?t=${Date.now()}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
         body: JSON.stringify({
           message: `${userText} (Contexto do tópico: ${topic.title} na região ${topic.region})`,
           history: newHistory.map((m) => ({ role: m.role, content: m.text })),

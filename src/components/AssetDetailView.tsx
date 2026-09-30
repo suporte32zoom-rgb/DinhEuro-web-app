@@ -56,9 +56,13 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
   useEffect(() => {
     let isMounted = true;
     setAiLoading(true);
-    fetch("/api/market-ai/asset-analysis", {
+    fetch(`/api/market-ai/asset-analysis?t=${Date.now()}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      },
       body: JSON.stringify({
         ticker: asset.ticker,
         name: asset.name,

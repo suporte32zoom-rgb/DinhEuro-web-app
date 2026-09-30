@@ -16,6 +16,15 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
+// Strict no-cache middleware for all real-time financial API endpoints
+app.use("/api", (_req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
+  next();
+});
+
 // Lazy-initialize Gemini AI client safely
 let genAI = null;
 function getGeminiClient() {

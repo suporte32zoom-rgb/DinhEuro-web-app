@@ -56,7 +56,14 @@ export interface LiveChartResponse {
  */
 export async function fetchLiveQuotes(): Promise<Record<string, LiveQuotePayload> | null> {
   try {
-    const res = await fetch("/api/market/quotes");
+    const timestamp = Date.now();
+    const res = await fetch(`/api/market/quotes?t=${timestamp}`, {
+      cache: "no-store",
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
+      },
+    });
     if (!res.ok) return null;
     const data: LiveMarketResponse = await res.json();
     if (data.success && data.quotes) {
@@ -77,7 +84,17 @@ export async function fetchLiveChart(
   period: ChartPeriod
 ): Promise<HistoricalPoint[] | null> {
   try {
-    const res = await fetch(`/api/market/chart?ticker=${encodeURIComponent(ticker)}&period=${encodeURIComponent(period)}`);
+    const timestamp = Date.now();
+    const res = await fetch(
+      `/api/market/chart?ticker=${encodeURIComponent(ticker)}&period=${encodeURIComponent(period)}&t=${timestamp}`,
+      {
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+        },
+      }
+    );
     if (!res.ok) return null;
     const data: LiveChartResponse = await res.json();
     if (data.success && Array.isArray(data.points) && data.points.length > 0) {
@@ -95,7 +112,14 @@ export async function fetchLiveChart(
  */
 export async function fetchLiveNews(): Promise<NewsItem[] | null> {
   try {
-    const res = await fetch("/api/market/news");
+    const timestamp = Date.now();
+    const res = await fetch(`/api/market/news?t=${timestamp}`, {
+      cache: "no-store",
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
+      },
+    });
     if (!res.ok) return null;
     const data: LiveNewsResponse = await res.json();
     if (data.success && Array.isArray(data.news) && data.news.length > 0) {
@@ -113,7 +137,14 @@ export async function fetchLiveNews(): Promise<NewsItem[] | null> {
  */
 export async function fetchLiveMovers(): Promise<LiveMoversResponse["movers"] | null> {
   try {
-    const res = await fetch("/api/market/movers");
+    const timestamp = Date.now();
+    const res = await fetch(`/api/market/movers?t=${timestamp}`, {
+      cache: "no-store",
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
+      },
+    });
     if (!res.ok) return null;
     const data: LiveMoversResponse = await res.json();
     if (data.success && data.movers) {
