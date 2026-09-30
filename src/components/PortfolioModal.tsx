@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { PortfolioPosition, Asset } from "../types/finance";
-import { ALL_ASSETS } from "../data/mockMarketData";
+import { formatCurrencyBRL, formatAssetDisplayPrice } from "../utils/formatters";
 import {
   Briefcase,
   X,
@@ -29,23 +29,23 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({
   onAddPosition,
   onRemovePosition,
   onSelectAsset,
-  liveAssets = ALL_ASSETS,
+  liveAssets = [],
 }) => {
   const [showAddForm, setShowAddForm] = useState(false);
-  const [selectedAssetId, setSelectedAssetId] = useState(ALL_ASSETS[0]?.id || "petr4");
+  const [selectedAssetId, setSelectedAssetId] = useState(liveAssets[0]?.id || "petr4");
   const [quantity, setQuantity] = useState("100");
   const [buyPrice, setBuyPrice] = useState(
-    (ALL_ASSETS[0]?.price || 35).toString()
+    (liveAssets[0]?.price || 0).toString()
   );
 
   if (!isOpen) return null;
 
-  const currentAvailableAssets = liveAssets.length > 0 ? liveAssets : ALL_ASSETS;
-
-  // Calculate totals with live prices
+  // Calculate totals strictly with live quotes (Single Source of Truth)
   const enrichedPositions = positions.map((pos) => {
-    const liveAsset = currentAvailableAssets.find((a) => a.id === pos.assetId || a.ticker.toUpperCase() === pos.ticker.toUpperCase());
-    const curPrice = liveAsset ? liveAsset.price : pos.avgBuyPrice;
+    const liveAsset = liveAssets.find(
+      (a) => a.id === pos.assetId || a.ticker.toUpperCase() === pos.ticker.toUpperCase()
+    );
+    const curPrice = liveAsset && liveAsset.price > 0 ? liveAsset.price : pos.avgBuyPrice;
     const totalCost = pos.quantity * pos.avgBuyPrice;
     const currentValue = pos.quantity * curPrice;
     const profitLoss = currentValue - totalCost;
@@ -75,15 +75,15 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({
 
   const handleAssetChange = (assetId: string) => {
     setSelectedAssetId(assetId);
-    const found = currentAvailableAssets.find((a) => a.id === assetId);
-    if (found) {
+    const found = liveAssets.find((a) => a.id === assetId);
+    if (found && found.price > 0) {
       setBuyPrice(found.price.toString());
     }
   };
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const found = currentAvailableAssets.find((a) => a.id === selectedAssetId);
+    const found = liveAssets.find((a) => a.id === selectedAssetId);
     if (!found) return;
 
     onAddPosition({
@@ -91,7 +91,7 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({
       ticker: found.ticker,
       name: found.name,
       quantity: Number(quantity),
-      avgBuyPrice: Number(buyPrice),
+      avgBuyPrice: Number(buyPrice) || found.price,
       purchaseDate: new Date().toISOString().split("T")[0],
     });
 
@@ -136,14 +136,14 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({
           <div className="p-3 rounded-xl bg-[#161b22] border border-[#30363d]">
             <span className="text-[11px] text-[#8b949e] font-medium">Patrimônio Atual</span>
             <div className="text-xl font-bold font-mono text-white mt-1">
-              R$ {totalPortfolioValue.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatCurrencyBRL(totalPortfolioValue)}
             </div>
           </div>
 
           <div className="p-3 rounded-xl bg-[#161b22] border border-[#30363d]">
             <span className="text-[11px] text-[#8b949e] font-medium">Custo Total Aplicado</span>
             <div className="text-lg font-bold font-mono text-[#8b949e] mt-1">
-              R$ {totalPortfolioCost.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatCurrencyBRL(totalPortfolioCost)}
             </div>
           </div>
 
@@ -154,11 +154,8 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({
                 totalPL >= 0 ? "text-[#00c853]" : "text-[#ff5252]"
               }`}
             >
-              {totalPL >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-              <span>
-                {totalPL >= 0 ? "+" : ""}
-                R$ {totalPL.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-              </span>
+              {totalPL >= 0 ? <TrendingUp className="w-4 h-4 shrink-0" /> : <TrendingDown className="w-4 h-4 shrink-0" />}
+              <span>{formatCurrencyBRL(totalPL, true)}</span>
               <span className="text-xs">({totalPLPct >= 0 ? "+" : ""}{totalPLPct.toFixed(2)}%)</span>
             </div>
           </div>
@@ -170,7 +167,14 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({
             Posições Abertas ({positions.length})
           </span>
           <button
-            onClick={() => setShowAddForm(!showAddForm)}
+            onClick={() => {
+              if (liveAssets.length > 0 && (!buyPrice || buyPrice === "0")) {
+                const f = liveAssets[0];
+                setSelectedAssetId(f.id);
+                setBuyPrice(f.price.toString());
+              }
+              setShowAddForm(!showAddForm);
+            }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#238636] hover:bg-[#2ea043] text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -195,7 +199,7 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({
                   onChange={(e) => handleAssetChange(e.target.value)}
                   className="w-full bg-[#161b22] border border-[#30363d] text-xs text-[#e6edf3] p-2 rounded-xl focus:outline-none"
                 >
-                  {currentAvailableAssets.map((a) => (
+                  {liveAssets.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.ticker} - {a.name}
                     </option>
@@ -204,14 +208,15 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-[11px] text-[#8b949e] mb-1">Quantidade (Cotas/Ações)</label>
+                <label className="block text-[11px] text-[#8b949e] mb-1">Quantidade</label>
                 <input
                   type="number"
                   step="any"
+                  min="0.00000001"
+                  required
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
-                  className="w-full bg-[#161b22] border border-[#30363d] text-xs text-[#e6edf3] p-2 rounded-xl focus:outline-none font-mono"
-                  required
+                  className="w-full bg-[#161b22] border border-[#30363d] text-xs text-[#e6edf3] p-2 rounded-xl focus:outline-none"
                 />
               </div>
 
@@ -220,25 +225,26 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({
                 <input
                   type="number"
                   step="any"
+                  min="0.0001"
+                  required
                   value={buyPrice}
                   onChange={(e) => setBuyPrice(e.target.value)}
-                  className="w-full bg-[#161b22] border border-[#30363d] text-xs text-[#e6edf3] p-2 rounded-xl focus:outline-none font-mono"
-                  required
+                  className="w-full bg-[#161b22] border border-[#30363d] text-xs text-[#e6edf3] p-2 rounded-xl focus:outline-none"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-1">
+            <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setShowAddForm(false)}
-                className="px-3 py-1.5 rounded-lg text-xs text-[#8b949e] hover:text-white"
+                className="px-3 py-1.5 rounded-xl text-xs text-[#8b949e] hover:bg-[#21262d] transition-colors"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="px-4 py-1.5 rounded-lg bg-[#1f6feb] hover:bg-[#388bfd] text-white text-xs font-semibold"
+                className="px-4 py-1.5 rounded-xl bg-[#1f6feb] hover:bg-[#388bfd] text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer"
               >
                 Salvar Posição
               </button>
@@ -247,62 +253,67 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({
         )}
 
         {/* Positions List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
+        <div className="flex-1 overflow-y-auto p-4 space-y-2">
           {enrichedPositions.length === 0 ? (
-            <div className="py-12 text-center text-xs text-[#8b949e] space-y-2">
-              <p>Nenhuma posição registrada ainda.</p>
-              <p className="text-[11px]">
-                Clique em &ldquo;Adicionar Ativo&rdquo; para simular sua carteira com cotações em tempo real.
+            <div className="text-center py-10 space-y-2">
+              <PieChart className="w-10 h-10 text-[#30363d] mx-auto" />
+              <p className="text-xs text-[#8b949e]">
+                Nenhuma posição cadastrada na carteira.
+              </p>
+              <p className="text-[11px] text-[#58a6ff] cursor-pointer hover:underline" onClick={() => setShowAddForm(true)}>
+                + Adicionar primeiro ativo ao portfólio
               </p>
             </div>
           ) : (
             enrichedPositions.map((pos) => {
-              const isPosProfit = pos.profitLoss >= 0;
+              const isProfit = pos.profitLoss >= 0;
               return (
                 <div
                   key={pos.id}
-                  className="p-3.5 rounded-xl bg-[#0e1117] border border-[#30363d] flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
+                  className="p-3.5 rounded-xl bg-[#0e1117] border border-[#30363d] hover:border-[#58a6ff]/50 transition-colors flex items-center justify-between gap-3"
                 >
                   <div
-                    className="cursor-pointer"
                     onClick={() => {
                       if (pos.liveAsset) {
                         onSelectAsset(pos.liveAsset);
                         onClose();
                       }
                     }}
+                    className="cursor-pointer group flex-1"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-sm text-[#e6edf3] group-hover:text-[#58a6ff]">
+                      <span className="font-mono text-sm font-bold text-[#e6edf3] group-hover:text-[#58a6ff] transition-colors">
                         {pos.ticker}
                       </span>
-                      <span className="text-[11px] text-[#8b949e]">
-                        {pos.quantity} cotas @ R$ {pos.avgBuyPrice.toFixed(2)}
+                      <span className="text-[11px] text-[#8b949e] truncate max-w-[150px]">
+                        {pos.name}
                       </span>
                     </div>
-                    <p className="text-xs text-[#8b949e]">{pos.name}</p>
+                    <div className="text-xs text-[#8b949e] mt-1 flex items-center gap-3">
+                      <span>Qtd: <strong className="text-[#e6edf3] font-mono">{pos.quantity}</strong></span>
+                      <span>PM: <strong className="text-[#e6edf3] font-mono">{formatCurrencyBRL(pos.avgBuyPrice)}</strong></span>
+                      <span>Atual: <strong className="text-[#e6edf3] font-mono">{formatCurrencyBRL(pos.currentPrice)}</strong></span>
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between sm:justify-end gap-5">
-                    <div className="text-right">
-                      <div className="text-xs font-mono font-bold text-white">
-                        R$ {pos.currentValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  <div className="text-right shrink-0 flex items-center gap-3">
+                    <div>
+                      <div className="text-xs sm:text-sm font-mono font-bold text-[#e6edf3]">
+                        {formatCurrencyBRL(pos.currentValue)}
                       </div>
                       <div
-                        className={`text-[11px] font-mono font-semibold ${
-                          isPosProfit ? "text-[#00c853]" : "text-[#ff5252]"
+                        className={`text-xs font-mono font-semibold flex items-center justify-end gap-1 ${
+                          isProfit ? "text-[#00c853]" : "text-[#ff5252]"
                         }`}
                       >
-                        {isPosProfit ? "+" : ""}
-                        R$ {pos.profitLoss.toFixed(2)} ({isPosProfit ? "+" : ""}
-                        {pos.profitLossPct.toFixed(2)}%)
+                        {isProfit ? "+" : ""}{formatCurrencyBRL(pos.profitLoss, true)} ({isProfit ? "+" : ""}{pos.profitLossPct.toFixed(2)}%)
                       </div>
                     </div>
 
                     <button
                       onClick={() => onRemovePosition(pos.id)}
-                      className="p-2 text-[#8b949e] hover:text-[#ff5252] hover:bg-[#30363d]/50 rounded-lg transition-colors"
-                      title="Excluir posição"
+                      className="p-1.5 rounded-lg text-[#8b949e] hover:text-[#ff5252] hover:bg-[#21262d] transition-colors cursor-pointer"
+                      title="Excluir posição da carteira"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -311,17 +322,6 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({
               );
             })
           )}
-        </div>
-
-        {/* Modal Footer */}
-        <div className="p-4 border-t border-[#30363d] bg-[#0e1117] flex items-center justify-between text-xs text-[#8b949e]">
-          <span>Cotações sincronizadas em tempo real</span>
-          <button
-            onClick={onClose}
-            className="px-4 py-1.5 rounded-xl bg-[#21262d] text-[#e6edf3] hover:text-white border border-[#30363d]"
-          >
-            Fechar
-          </button>
         </div>
       </div>
     </div>

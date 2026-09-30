@@ -71,21 +71,53 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
 
   // Dynamic live rates to BRL based on liveAssets feed
   const liveRatesToBRL = useMemo<Record<CurrencyType, number>>(() => {
-    const usdBrlAsset = liveAssets.find((a) => a.id === "usd-brl" || a.ticker.includes("USD / BRL"));
-    const eurBrlAsset = liveAssets.find((a) => a.id === "eur-brl" || a.ticker.includes("EUR / BRL"));
-    const gbpBrlAsset = liveAssets.find((a) => a.id === "gbp-brl" || a.ticker.includes("GBP / BRL"));
-    const jpyBrlAsset = liveAssets.find((a) => a.id === "jpy-brl" || a.ticker.includes("JPY / BRL"));
-    const btcAsset = liveAssets.find((a) => a.id === "bitcoin" || a.ticker === "BTC");
-    const ethAsset = liveAssets.find((a) => a.id === "ether" || a.ticker === "ETH");
-    const solAsset = liveAssets.find((a) => a.id === "solana" || a.ticker === "SOL");
+    const usdBrlAsset = liveAssets.find(
+      (a) => a.id === "usd-brl" || a.id === "usd" || a.ticker.includes("USD / BRL") || a.ticker.includes("USD/BRL")
+    );
+    const eurBrlAsset = liveAssets.find(
+      (a) => a.id === "eur-brl" || a.id === "eur" || a.ticker.includes("EUR / BRL") || a.ticker.includes("EUR/BRL")
+    );
+    const gbpBrlAsset = liveAssets.find(
+      (a) => a.id === "gbp-brl" || a.id === "gbp" || a.ticker.includes("GBP / BRL") || a.ticker.includes("GBP/BRL")
+    );
+    const jpyBrlAsset = liveAssets.find(
+      (a) => a.id === "jpy-brl" || a.id === "jpy" || a.ticker.includes("JPY / BRL") || a.ticker.includes("JPY/BRL")
+    );
+    const btcAsset = liveAssets.find(
+      (a) => a.id === "bitcoin" || a.id === "btc-brl" || a.ticker === "BTC" || a.ticker.startsWith("BTC")
+    );
+    const ethAsset = liveAssets.find(
+      (a) => a.id === "ether" || a.id === "eth-brl" || a.ticker === "ETH" || a.ticker.startsWith("ETH")
+    );
+    const solAsset = liveAssets.find(
+      (a) => a.id === "solana" || a.id === "sol-brl" || a.ticker === "SOL" || a.ticker.startsWith("SOL")
+    );
 
-    const usdPriceInBrl = usdBrlAsset?.price || 5.20;
-    const eurPriceInBrl = eurBrlAsset?.price || 5.90;
-    const gbpPriceInBrl = gbpBrlAsset?.price || 6.95;
-    const jpyPriceInBrl = jpyBrlAsset?.price || 0.0345;
-    const btcPriceInUsd = btcAsset?.price || 83400;
-    const ethPriceInUsd = ethAsset?.price || 2650;
-    const solPriceInUsd = solAsset?.price || 120;
+    const usdPriceInBrl = usdBrlAsset?.price && usdBrlAsset.price > 0 ? usdBrlAsset.price : 5.1866;
+    const eurPriceInBrl = eurBrlAsset?.price && eurBrlAsset.price > 0 ? eurBrlAsset.price : 5.9067;
+    const gbpPriceInBrl = gbpBrlAsset?.price && gbpBrlAsset.price > 0 ? gbpBrlAsset.price : 6.9450;
+    
+    // Normalize JPY to 1 unit
+    let jpyPriceInBrl = 0.0345;
+    if (jpyBrlAsset?.price && jpyBrlAsset.price > 0) {
+      jpyPriceInBrl = jpyBrlAsset.price > 1 ? jpyBrlAsset.price / 100 : jpyBrlAsset.price;
+    }
+
+    // Crypto in BRL
+    let btcPriceInBrl = 542800;
+    if (btcAsset?.price && btcAsset.price > 0) {
+      btcPriceInBrl = btcAsset.currency === "USD" ? btcAsset.price * usdPriceInBrl : btcAsset.price;
+    }
+
+    let ethPriceInBrl = 16450;
+    if (ethAsset?.price && ethAsset.price > 0) {
+      ethPriceInBrl = ethAsset.currency === "USD" ? ethAsset.price * usdPriceInBrl : ethAsset.price;
+    }
+
+    let solPriceInBrl = 1145;
+    if (solAsset?.price && solAsset.price > 0) {
+      solPriceInBrl = solAsset.currency === "USD" ? solAsset.price * usdPriceInBrl : solAsset.price;
+    }
 
     return {
       BRL: 1.0,
@@ -93,22 +125,24 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
       EUR: eurPriceInBrl,
       GBP: gbpPriceInBrl,
       JPY: jpyPriceInBrl,
-      BTC: btcPriceInUsd * usdPriceInBrl,
-      ETH: ethPriceInUsd * usdPriceInBrl,
-      SOL: solPriceInUsd * usdPriceInBrl,
+      BTC: btcPriceInBrl,
+      ETH: ethPriceInBrl,
+      SOL: solPriceInBrl,
     };
   }, [liveAssets]);
 
   // Conversion Calculation with Live Rates
   const conversionResult = useMemo(() => {
     const numericAmount = parseFloat(converterAmount.replace(",", ".")) || 0;
-    if (numericAmount <= 0) return { raw: 0, formatted: "0,00" };
-
     const fromRate = liveRatesToBRL[fromCurrency] || 1.0;
     const toRate = liveRatesToBRL[toCurrency] || 1.0;
+    const unitRate = fromRate / toRate;
 
-    const amountInBRL = numericAmount * fromRate;
-    const targetValue = amountInBRL / toRate;
+    if (numericAmount <= 0) {
+      return { raw: 0, formatted: "0,00", unitRate };
+    }
+
+    const targetValue = numericAmount * unitRate;
 
     let formatted = "";
     if (toCurrency === "BTC" || toCurrency === "ETH" || toCurrency === "SOL") {
@@ -130,7 +164,7 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
       });
     }
 
-    return { raw: targetValue, formatted };
+    return { raw: targetValue, formatted, unitRate };
   }, [converterAmount, fromCurrency, toCurrency, liveRatesToBRL]);
 
   const handleSwapCurrencies = () => {
@@ -360,8 +394,15 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
               </div>
 
               {/* Conversion Result Display */}
-              <div className="p-3 rounded-xl bg-gradient-to-br from-[#161b22] to-[#0e1117] border border-[#30363d] space-y-1">
-                <span className="text-[10px] text-[#8b949e] block">Resultado em Tempo Real</span>
+              <div className="p-3 rounded-xl bg-gradient-to-br from-[#161b22] to-[#0e1117] border border-[#30363d] space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-[#8b949e] font-semibold uppercase tracking-wider">
+                    Resultado em Tempo Real
+                  </span>
+                  <span className="text-[10px] text-[#00c853] font-mono font-medium">
+                    1 {fromCurrency} = {conversionResult.unitRate < 0.001 ? conversionResult.unitRate.toFixed(8) : conversionResult.unitRate < 1 ? conversionResult.unitRate.toFixed(4) : conversionResult.unitRate > 1000 ? conversionResult.unitRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : conversionResult.unitRate.toFixed(4)} {toCurrency}
+                  </span>
+                </div>
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-xs font-mono font-bold text-[#00c853]">
                     {CURRENCY_INFO[toCurrency].symbol}
@@ -373,7 +414,7 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
                     {toCurrency}
                   </span>
                 </div>
-                <div className="text-[10px] text-[#8b949e] pt-1 border-t border-[#21262d] flex justify-between">
+                <div className="text-[10px] text-[#8b949e] pt-1.5 border-t border-[#21262d] flex justify-between items-center">
                   <span>
                     {converterAmount || "0"} {fromCurrency} =
                   </span>
@@ -409,25 +450,35 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
               </div>
 
               {/* Live Rates Reference Note */}
-              <div className="p-2 rounded-lg bg-[#161b22] border border-[#21262d] text-[10px] text-[#8b949e] space-y-1">
+              <div className="p-2.5 rounded-lg bg-[#161b22] border border-[#21262d] text-[10px] text-[#8b949e] space-y-1.5">
                 <div className="flex items-center justify-between font-medium">
-                  <span className="flex items-center gap-1 text-[#00c853]">
+                  <span className="flex items-center gap-1 text-[#00c853] font-semibold">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#00c853] animate-pulse"></span>
                     Câmbio ao Vivo
                   </span>
-                  <span className="text-[#8b949e] text-[9px]">Interbancário / Forex</span>
+                  <span className="text-[#8b949e] text-[9px] font-mono">Taxas Oficiais em Tempo Real</span>
                 </div>
-                <div className="flex justify-between font-mono">
+                <div className="flex justify-between font-mono bg-[#0e1117] px-2 py-1 rounded border border-[#30363d]/50">
+                  <span className="text-[#8b949e]">Par Selecionado (1 {fromCurrency}):</span>
+                  <span className="text-[#00c853] font-bold">
+                    {conversionResult.unitRate < 0.001 ? conversionResult.unitRate.toFixed(8) : conversionResult.unitRate < 1 ? conversionResult.unitRate.toFixed(4) : conversionResult.unitRate > 1000 ? conversionResult.unitRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : conversionResult.unitRate.toFixed(4)} {toCurrency}
+                  </span>
+                </div>
+                <div className="flex justify-between font-mono pt-0.5">
                   <span>1 USD =</span>
-                  <span className="text-[#e6edf3]">R$ {(liveRatesToBRL.USD || 5.20).toFixed(4)}</span>
+                  <span className="text-[#e6edf3]">R$ {(liveRatesToBRL.USD || 5.1866).toFixed(4)}</span>
                 </div>
                 <div className="flex justify-between font-mono">
                   <span>1 EUR =</span>
-                  <span className="text-[#e6edf3]">R$ {(liveRatesToBRL.EUR || 5.90).toFixed(4)}</span>
+                  <span className="text-[#e6edf3]">R$ {(liveRatesToBRL.EUR || 5.9067).toFixed(4)}</span>
+                </div>
+                <div className="flex justify-between font-mono">
+                  <span>1 GBP =</span>
+                  <span className="text-[#e6edf3]">R$ {(liveRatesToBRL.GBP || 6.9450).toFixed(4)}</span>
                 </div>
                 <div className="flex justify-between font-mono">
                   <span>1 BTC =</span>
-                  <span className="text-[#e6edf3]">R$ {(liveRatesToBRL.BTC || 500000).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                  <span className="text-[#e6edf3]">R$ {(liveRatesToBRL.BTC || 542800).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
                 </div>
               </div>
             </div>
