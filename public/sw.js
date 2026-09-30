@@ -1,5 +1,5 @@
 // DinhEuro Finanças - Progressive Web App Service Worker
-const CACHE_NAME = "dinheuro-v2";
+const CACHE_NAME = "dinheuro-v3";
 const OFFLINE_URL = "/";
 
 const STATIC_ASSETS = [
