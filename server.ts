@@ -947,6 +947,8 @@ Como posso ajudar você a analisar um ativo específico (ações, FIIs, moedas, 
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
+      root: process.cwd(),
+      configFile: path.resolve(process.cwd(), "vite.config.ts"),
       server: { middlewareMode: true },
       appType: "spa",
     });
