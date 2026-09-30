@@ -1,6 +1,7 @@
 import React from "react";
 import { Asset } from "../types/finance";
 import { Sparkline } from "./Sparkline";
+import { formatAssetDisplayPrice } from "../utils/formatters";
 import { X, Bookmark, Trash2, ArrowRight, TrendingUp, TrendingDown } from "lucide-react";
 
 interface WatchlistModalProps {
@@ -97,7 +98,7 @@ export const WatchlistModal: React.FC<WatchlistModalProps> = ({
 
                     <div className="text-right">
                       <div className="text-xs font-mono font-bold text-white">
-                        {asset.currency} {asset.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        {formatAssetDisplayPrice(asset.price, asset.currency, asset.id, asset.ticker, asset.name)}
                       </div>
                       <div
                         className={`text-[11px] font-mono font-semibold flex items-center justify-end gap-0.5 ${

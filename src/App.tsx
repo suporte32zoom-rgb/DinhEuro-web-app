@@ -36,7 +36,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<RegionalTab>("América Latina");
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
 
-  // Live real-time market feeds state
+  // Live real-time market feeds state (Single Source of Truth)
   const [liveAssets, setLiveAssets] = useState<Asset[]>(ALL_ASSETS);
   const [liveNews, setLiveNews] = useState<NewsItem[] | null>(null);
   const [liveMovers, setLiveMovers] = useState<{
@@ -46,6 +46,7 @@ export default function App() {
   } | null>(null);
   const [lastUpdatedTime, setLastUpdatedTime] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasInitialLoaded, setHasInitialLoaded] = useState(false);
 
   // PWA State & Installation Hook
   const {
@@ -154,6 +155,7 @@ export default function App() {
           second: "2-digit",
         })
       );
+      setHasInitialLoaded(true);
     } catch (err) {
       console.warn("Market refresh error:", err);
     } finally {
@@ -174,47 +176,17 @@ export default function App() {
   const [watchlistIds, setWatchlistIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem("dinheuro_watchlist");
-      return saved ? JSON.parse(saved) : ["ibov", "petr4", "sp500", "btc-brl", "usd-brl"];
+      return saved ? JSON.parse(saved) : ["ibovespa", "petr4", "sp-500", "usd-brl", "bitcoin"];
     } catch {
-      return ["ibov", "petr4", "sp500", "btc-brl", "usd-brl"];
+      return ["ibovespa", "petr4", "sp-500", "usd-brl", "bitcoin"];
     }
   });
 
-  // Portfolio positions state (Local Storage persisted)
+  // Portfolio positions state (Local Storage persisted, starts empty with zero fake numbers)
   const [portfolioPositions, setPortfolioPositions] = useState<PortfolioPosition[]>(() => {
     try {
       const saved = localStorage.getItem("dinheuro_portfolio");
-      return saved
-        ? JSON.parse(saved)
-        : [
-            {
-              id: "pos-1",
-              assetId: "petr4",
-              ticker: "PETR4",
-              name: "Petrobras PN",
-              quantity: 200,
-              avgBuyPrice: 35.8,
-              purchaseDate: "2025-01-15",
-            },
-            {
-              id: "pos-2",
-              assetId: "vale3",
-              ticker: "VALE3",
-              name: "Vale S.A.",
-              quantity: 150,
-              avgBuyPrice: 58.2,
-              purchaseDate: "2025-02-01",
-            },
-            {
-              id: "pos-3",
-              assetId: "btc-brl",
-              ticker: "BTC/BRL",
-              name: "Bitcoin",
-              quantity: 0.08,
-              avgBuyPrice: 512000,
-              purchaseDate: "2025-02-10",
-            },
-          ];
+      return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
     }
@@ -249,10 +221,7 @@ export default function App() {
         );
         if (found) {
           setSelectedAsset(found);
-          window.scrollTo({ top: 0, behavior: "smooth" });
         }
-      } else if (hash === "" || hash === "#") {
-        setSelectedAsset(null);
       }
     };
 
@@ -261,6 +230,11 @@ export default function App() {
     return () => window.removeEventListener("hashchange", handleHash);
   }, [liveAssets]);
 
+  // Watchlist asset objects
+  const watchlistAssets = liveAssets.filter((a) =>
+    watchlistIds.includes(a.id) || watchlistIds.includes(a.ticker.toLowerCase())
+  );
+
   const handleSelectAsset = (asset: Asset) => {
     setSelectedAsset(asset);
     window.location.hash = `#asset/${asset.id}`;
@@ -268,15 +242,14 @@ export default function App() {
   };
 
   const handleSelectTicker = (ticker: string) => {
-    const asset = liveAssets.find(
-      (a) => a.ticker.toLowerCase() === ticker.toLowerCase() || a.id.toLowerCase() === ticker.toLowerCase()
+    const cleanTicker = ticker.replace("$", "").trim();
+    const found = liveAssets.find(
+      (a) =>
+        a.ticker.toUpperCase() === cleanTicker.toUpperCase() ||
+        a.id.toLowerCase() === cleanTicker.toLowerCase()
     );
-    if (asset) {
-      handleSelectAsset(asset);
-    } else {
-      // Default to IBOV if not directly matched
-      const ibov = liveAssets.find((a) => a.id === "ibov" || a.id === "ibovespa");
-      if (ibov) handleSelectAsset(ibov);
+    if (found) {
+      handleSelectAsset(found);
     }
   };
 
@@ -287,40 +260,43 @@ export default function App() {
   };
 
   const handleToggleWatchlist = (asset: Asset) => {
-    setWatchlistIds((prev) =>
-      prev.includes(asset.id) ? prev.filter((id) => id !== asset.id) : [...prev, asset.id]
-    );
+    setWatchlistIds((prev) => {
+      if (prev.includes(asset.id)) {
+        return prev.filter((id) => id !== asset.id);
+      } else {
+        return [...prev, asset.id];
+      }
+    });
   };
 
-  const handleAddPortfolioPosition = (newPos: Omit<PortfolioPosition, "id">) => {
-    const pos: PortfolioPosition = {
-      ...newPos,
-      id: `pos-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+  const handleAddPosition = (pos: Omit<PortfolioPosition, "id">) => {
+    const newPos: PortfolioPosition = {
+      ...pos,
+      id: `pos-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
     };
-    setPortfolioPositions((prev) => [pos, ...prev]);
+    setPortfolioPositions((prev) => [...prev, newPos]);
   };
 
-  const handleRemovePortfolioPosition = (id: string) => {
+  const handleRemovePosition = (id: string) => {
     setPortfolioPositions((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const watchlistAssets = liveAssets.filter((a) => watchlistIds.includes(a.id));
-
   return (
-    <div className="min-h-screen bg-[#0e1117] text-[#e6edf3] flex flex-col selection:bg-[#58a6ff]/30 selection:text-white">
-      {/* PWA Splash Screen on launch */}
-      <PWASplashIntro />
+    <div className="min-h-screen bg-[#0e1117] text-[#e6edf3] flex flex-col font-sans selection:bg-[#58a6ff]/30 selection:text-white">
+      {/* PWA Splash Screen on Initial Visit */}
+      <PWASplashIntro
+        onInstallPrompt={promptInstall}
+        isInstallable={isInstallable}
+      />
 
-      {/* PWA Offline and Update notification banner */}
+      {/* PWA Offline / Update Notification Bar */}
       <PWANotificationBar
         isOffline={isOffline}
         hasUpdate={hasUpdate}
-        onApplyUpdate={applyUpdate}
-        isInstallable={isInstallable}
-        onOpenInstallModal={() => setPwaModalOpen(true)}
+        onUpdate={applyUpdate}
       />
 
-      {/* 1. Global Navigation Header */}
+      {/* Global Header & Real-Time Micro-Ticker Bar */}
       <Header
         onOpenSearch={() => setSearchOpen(true)}
         onOpenSidebar={() => setSidebarOpen(true)}
@@ -368,24 +344,29 @@ export default function App() {
               assets={liveAssets}
               activeTab={activeTab}
               onSelectAsset={handleSelectAsset}
+              isLoading={!hasInitialLoaded && isRefreshing}
             />
 
             {/* AI Market Summary Accordion */}
             <AIMarketSummaryAccordion
               activeTab={activeTab}
               onOpenDeepDive={(topic) => setDeepDiveTopic(topic)}
+              liveNews={liveNews}
+              liveAssets={liveAssets}
             />
 
             {/* Market Movers (Mais ativas, Maiores altas, Maiores quedas) */}
             <MarketMoversGrid
               onSelectTicker={handleSelectTicker}
               liveMovers={liveMovers}
+              isLoading={!hasInitialLoaded && isRefreshing}
             />
 
             {/* Portal News Section */}
             <NewsSection
               onSelectTicker={handleSelectTicker}
               liveNews={liveNews}
+              isLoading={!hasInitialLoaded && isRefreshing}
             />
           </div>
         )}
@@ -420,8 +401,8 @@ export default function App() {
         isOpen={portfolioOpen}
         onClose={() => setPortfolioOpen(false)}
         positions={portfolioPositions}
-        onAddPosition={handleAddPortfolioPosition}
-        onRemovePosition={handleRemovePortfolioPosition}
+        onAddPosition={handleAddPosition}
+        onRemovePosition={handleRemovePosition}
         onSelectAsset={handleSelectAsset}
         liveAssets={liveAssets}
       />
@@ -434,20 +415,25 @@ export default function App() {
         onSelectAsset={handleSelectAsset}
       />
 
-      <AIDeepDiveModal
-        topic={deepDiveTopic}
-        onClose={() => setDeepDiveTopic(null)}
-      />
+      {deepDiveTopic && (
+        <AIDeepDiveModal
+          topic={deepDiveTopic}
+          isOpen={!!deepDiveTopic}
+          onClose={() => setDeepDiveTopic(null)}
+          onSelectTicker={handleSelectTicker}
+          region={activeTab}
+        />
+      )}
 
+      {/* PWA Direct Modal */}
       <PWAInstallModal
         isOpen={pwaModalOpen}
         onClose={() => setPwaModalOpen(false)}
         onInstall={promptInstall}
-        isInstallable={isInstallable}
         isInstalled={isInstalled}
       />
 
-      {/* Global Footer */}
+      {/* Global High Density Footer */}
       <Footer />
     </div>
   );

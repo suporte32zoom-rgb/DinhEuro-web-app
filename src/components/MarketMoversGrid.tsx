@@ -1,7 +1,7 @@
 import React from "react";
-import { TOP_MOVERS_DATA } from "../data/mockMarketData";
 import { MarketMoverItem } from "../types/finance";
-import { TrendingUp, TrendingDown, Activity, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { TrendingUp, TrendingDown, Activity, ArrowUpRight, ArrowDownRight, Loader2 } from "lucide-react";
+import { formatCurrencyBRL } from "../utils/formatters";
 
 interface MarketMoversGridProps {
   onSelectTicker: (ticker: string) => void;
@@ -10,12 +10,13 @@ interface MarketMoversGridProps {
     topGainers: MarketMoverItem[];
     topLosers: MarketMoverItem[];
   } | null;
+  isLoading?: boolean;
 }
 
-export const MarketMoversGrid: React.FC<MarketMoversGridProps> = ({ onSelectTicker, liveMovers }) => {
-  const activeItems = liveMovers?.mostActive?.length ? liveMovers.mostActive : TOP_MOVERS_DATA.mostActive;
-  const gainersItems = liveMovers?.topGainers?.length ? liveMovers.topGainers : TOP_MOVERS_DATA.topGainers;
-  const losersItems = liveMovers?.topLosers?.length ? liveMovers.topLosers : TOP_MOVERS_DATA.topLosers;
+export const MarketMoversGrid: React.FC<MarketMoversGridProps> = ({ onSelectTicker, liveMovers, isLoading = false }) => {
+  const activeItems = liveMovers?.mostActive || [];
+  const gainersItems = liveMovers?.topGainers || [];
+  const losersItems = liveMovers?.topLosers || [];
 
   const renderColumn = (
     title: string,
@@ -51,61 +52,68 @@ export const MarketMoversGrid: React.FC<MarketMoversGridProps> = ({ onSelectTick
             </span>
           </div>
 
-          {/* List of items */}
-          <div className="divide-y divide-[#21262d]/70">
-            {items.map((item) => {
-              const isPositive = item.changePercent >= 0;
-              return (
-                <div
-                  key={item.id || item.ticker}
-                  onClick={() => onSelectTicker(item.ticker)}
-                  className="py-2.5 px-2 rounded-xl hover:bg-[#21262d]/80 cursor-pointer flex items-center justify-between transition-colors group"
-                >
-                  <div className="min-w-0 pr-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-xs font-bold text-[#e6edf3] group-hover:text-[#58a6ff] transition-colors">
-                        {item.ticker}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-[#8b949e] truncate max-w-[140px]" title={item.name}>
-                      {item.name}
-                    </p>
+          {/* List of items or Skeletons */}
+          {items.length === 0 ? (
+            <div className="divide-y divide-[#21262d]/70">
+              {Array.from({ length: 5 }).map((_, idx) => (
+                <div key={idx} className="py-2.5 px-2 flex items-center justify-between animate-pulse">
+                  <div className="space-y-1.5">
+                    <div className="w-14 h-3.5 bg-[#21262d] rounded"></div>
+                    <div className="w-24 h-2.5 bg-[#21262d] rounded"></div>
                   </div>
-
-                  <div className="text-right shrink-0">
-                    <div className="text-xs font-mono font-semibold text-[#e6edf3]">
-                      R$ {item.price.toFixed(2)}
-                    </div>
-                    <div
-                      className={`text-[11px] font-mono font-bold flex items-center justify-end gap-0.5 ${
-                        isPositive ? "text-[#00c853]" : "text-[#ff5252]"
-                      }`}
-                    >
-                      {isPositive ? (
-                        <ArrowUpRight className="w-3 h-3 shrink-0" />
-                      ) : (
-                        <ArrowDownRight className="w-3 h-3 shrink-0" />
-                      )}
-                      <span>
-                        {isPositive ? "+" : ""}
-                        {item.changePercent.toFixed(2)}%
-                      </span>
-                    </div>
+                  <div className="space-y-1.5 text-right">
+                    <div className="w-16 h-3.5 bg-[#21262d] rounded ml-auto"></div>
+                    <div className="w-12 h-2.5 bg-[#21262d] rounded ml-auto"></div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </div>
+              ))}
+            </div>
+          ) : (
+            <div className="divide-y divide-[#21262d]/70">
+              {items.map((item) => {
+                const isPositive = item.changePercent >= 0;
+                return (
+                  <div
+                    key={item.id || item.ticker}
+                    onClick={() => onSelectTicker(item.ticker)}
+                    className="py-2.5 px-2 rounded-xl hover:bg-[#21262d]/80 cursor-pointer flex items-center justify-between transition-colors group"
+                  >
+                    <div className="min-w-0 pr-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono text-xs font-bold text-[#e6edf3] group-hover:text-[#58a6ff] transition-colors">
+                          {item.ticker}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[#8b949e] truncate max-w-[140px]" title={item.name}>
+                        {item.name}
+                      </p>
+                    </div>
 
-        {/* Footer info */}
-        <div className="pt-3 mt-2 border-t border-[#21262d] text-center">
-          <button
-            onClick={() => onSelectTicker("IBOV")}
-            className="text-[11px] text-[#58a6ff] hover:underline font-medium cursor-pointer"
-          >
-            Ver todas as ações do mercado &rarr;
-          </button>
+                    <div className="text-right shrink-0">
+                      <div className="text-xs font-mono font-semibold text-[#e6edf3]">
+                        {formatCurrencyBRL(item.price)}
+                      </div>
+                      <div
+                        className={`text-[11px] font-mono font-bold flex items-center justify-end gap-0.5 ${
+                          isPositive ? "text-[#00c853]" : "text-[#ff5252]"
+                        }`}
+                      >
+                        {isPositive ? (
+                          <ArrowUpRight className="w-3 h-3 shrink-0" />
+                        ) : (
+                          <ArrowDownRight className="w-3 h-3 shrink-0" />
+                        )}
+                        <span>
+                          {isPositive ? "+" : ""}
+                          {item.changePercent.toFixed(2)}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -114,36 +122,41 @@ export const MarketMoversGrid: React.FC<MarketMoversGridProps> = ({ onSelectTick
   return (
     <section className="w-full py-4" id="market-movers-section">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-3 flex items-center justify-between">
-          <div>
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <h2 className="text-base font-bold text-[#e6edf3] tracking-tight">
-              Termômetro de Ações em Tempo Real (B3)
+              Destaques do Pregão B3 em Tempo Real
             </h2>
-            <p className="text-xs text-[#8b949e]">
-              Destaques de volume financeiro, oscilações máximas e mínimas do pregão ao vivo
-            </p>
+            <span className="text-xs text-[#8b949e]">
+              (Maiores oscilações e liquidez negociada)
+            </span>
           </div>
+          {isLoading && (
+            <div className="flex items-center gap-1.5 text-xs text-[#58a6ff]">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span>Calculando fluxos...</span>
+            </div>
+          )}
         </div>
 
-        {/* 3-Column Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {renderColumn(
-            "Mais ativas",
-            "Maior volume negociado",
+            "Mais Negociadas",
+            "Maior liquidez e volume financeiro",
             activeItems,
             <Activity className="w-4 h-4" />,
             "active"
           )}
           {renderColumn(
-            "Maiores altas do dia",
-            "Líderes de valorização",
+            "Maiores Altas",
+            "Principais valorizações percentuais do dia",
             gainersItems,
             <TrendingUp className="w-4 h-4" />,
             "gainers"
           )}
           {renderColumn(
-            "Maiores quedas do dia",
-            "Maiores desvalorizações",
+            "Maiores Baixas",
+            "Maiores correções e desvalorizações do dia",
             losersItems,
             <TrendingDown className="w-4 h-4" />,
             "losers"
