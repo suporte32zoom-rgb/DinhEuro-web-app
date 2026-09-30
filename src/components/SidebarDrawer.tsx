@@ -458,28 +458,38 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
                   </span>
                   <span className="text-[#8b949e] text-[9px] font-mono">Taxas Oficiais em Tempo Real</span>
                 </div>
-                <div className="flex justify-between font-mono bg-[#0e1117] px-2 py-1 rounded border border-[#30363d]/50">
-                  <span className="text-[#8b949e]">Par Selecionado (1 {fromCurrency}):</span>
-                  <span className="text-[#00c853] font-bold">
-                    {conversionResult.unitRate < 0.001 ? conversionResult.unitRate.toFixed(8) : conversionResult.unitRate < 1 ? conversionResult.unitRate.toFixed(4) : conversionResult.unitRate > 1000 ? conversionResult.unitRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : conversionResult.unitRate.toFixed(4)} {toCurrency}
-                  </span>
-                </div>
-                <div className="flex justify-between font-mono pt-0.5">
-                  <span>1 USD =</span>
-                  <span className="text-[#e6edf3]">R$ {(liveRatesToBRL.USD || 5.1866).toFixed(4)}</span>
-                </div>
-                <div className="flex justify-between font-mono">
-                  <span>1 EUR =</span>
-                  <span className="text-[#e6edf3]">R$ {(liveRatesToBRL.EUR || 5.9067).toFixed(4)}</span>
-                </div>
-                <div className="flex justify-between font-mono">
-                  <span>1 GBP =</span>
-                  <span className="text-[#e6edf3]">R$ {(liveRatesToBRL.GBP || 6.9450).toFixed(4)}</span>
-                </div>
-                <div className="flex justify-between font-mono">
-                  <span>1 BTC =</span>
-                  <span className="text-[#e6edf3]">R$ {(liveRatesToBRL.BTC || 542800).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
-                </div>
+                {liveAssets.length === 0 ? (
+                  <div className="space-y-2 py-1">
+                    <div className="h-5 w-full bg-[#0e1117] rounded animate-pulse" />
+                    <div className="h-3.5 w-3/4 bg-[#21262d] rounded animate-pulse" />
+                    <div className="h-3.5 w-2/3 bg-[#21262d] rounded animate-pulse" />
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between font-mono bg-[#0e1117] px-2 py-1 rounded border border-[#30363d]/50">
+                      <span className="text-[#8b949e]">Par Selecionado (1 {fromCurrency}):</span>
+                      <span className="text-[#00c853] font-bold">
+                        {conversionResult.unitRate < 0.001 ? conversionResult.unitRate.toFixed(8) : conversionResult.unitRate < 1 ? conversionResult.unitRate.toFixed(4) : conversionResult.unitRate > 1000 ? conversionResult.unitRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : conversionResult.unitRate.toFixed(4)} {toCurrency}
+                      </span>
+                    </div>
+                    <div className="flex justify-between font-mono pt-0.5">
+                      <span>1 USD =</span>
+                      <span className="text-[#e6edf3]">R$ {liveRatesToBRL.USD.toFixed(4)}</span>
+                    </div>
+                    <div className="flex justify-between font-mono">
+                      <span>1 EUR =</span>
+                      <span className="text-[#e6edf3]">R$ {liveRatesToBRL.EUR.toFixed(4)}</span>
+                    </div>
+                    <div className="flex justify-between font-mono">
+                      <span>1 GBP =</span>
+                      <span className="text-[#e6edf3]">R$ {liveRatesToBRL.GBP.toFixed(4)}</span>
+                    </div>
+                    <div className="flex justify-between font-mono">
+                      <span>1 BTC =</span>
+                      <span className="text-[#e6edf3]">R$ {liveRatesToBRL.BTC.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}

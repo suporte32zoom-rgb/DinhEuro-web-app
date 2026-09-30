@@ -26,9 +26,9 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
 
   return (
     <div className={`flex items-center gap-2.5 select-none ${className}`}>
-      {/* Official DinhEuro Vector Logo */}
+      {/* Official DinhEuro Vector Logo with High-Contrast White Disc for Dark Mode Visibility */}
       <div
-        className={`relative ${selectedSize.icon} shrink-0 rounded-full overflow-hidden flex items-center justify-center p-0.5 shadow-lg shadow-emerald-950/30 ${
+        className={`relative ${selectedSize.icon} shrink-0 rounded-full overflow-hidden flex items-center justify-center p-0.5 shadow-lg shadow-black/50 ring-2 ring-white/30 bg-white ${
           animate ? "group-hover:scale-105 transition-transform duration-200" : ""
         }`}
       >
@@ -38,71 +38,71 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
           xmlns="http://www.w3.org/2000/svg"
         >
           <defs>
-            {/* Background Inner Gradient */}
-            <radialGradient id="dinheuroInnerBg" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#152033" />
-              <stop offset="70%" stopColor="#0c121e" />
-              <stop offset="100%" stopColor="#080c14" />
+            {/* Crisp White / Light Disc Base */}
+            <radialGradient id="dinheuroDiscBg" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#ffffff" />
+              <stop offset="85%" stopColor="#ffffff" />
+              <stop offset="100%" stopColor="#f8fafc" />
             </radialGradient>
 
             {/* Continuous Circular Border Gradient (Left: Pale Blue -> Right: Light Green) */}
             <linearGradient id="dinheuroBorderGrad" x1="0%" y1="50%" x2="100%" y2="50%">
-              <stop offset="0%" stopColor="#93c5fd" />
-              <stop offset="35%" stopColor="#60a5fa" />
-              <stop offset="65%" stopColor="#4ade80" />
-              <stop offset="100%" stopColor="#86efac" />
+              <stop offset="0%" stopColor="#38bdf8" />
+              <stop offset="35%" stopColor="#0284c7" />
+              <stop offset="65%" stopColor="#10b981" />
+              <stop offset="100%" stopColor="#4ade80" />
             </linearGradient>
 
             {/* Conversion Arrows Gradient (Vibrant Gold / Yellow) */}
             <linearGradient id="dinheuroArrowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#fef08a" />
-              <stop offset="50%" stopColor="#facc15" />
-              <stop offset="100%" stopColor="#eab308" />
+              <stop offset="0%" stopColor="#fbbf24" />
+              <stop offset="50%" stopColor="#f59e0b" />
+              <stop offset="100%" stopColor="#d97706" />
             </linearGradient>
 
-            {/* Dark Blue for Euro Symbol */}
-            <linearGradient id="euroDarkBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#2563eb" />
-              <stop offset="50%" stopColor="#1d4ed8" />
-              <stop offset="100%" stopColor="#1e3a8a" />
+            {/* Dark Navy Blue for Euro Symbol */}
+            <linearGradient id="euroDarkNavyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#0f172a" />
+              <stop offset="50%" stopColor="#1e3a8a" />
+              <stop offset="100%" stopColor="#172554" />
             </linearGradient>
 
-            {/* Green for Real Symbol */}
-            <linearGradient id="realGreenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#34d399" />
-              <stop offset="50%" stopColor="#10b981" />
-              <stop offset="100%" stopColor="#059669" />
+            {/* Emerald Green for Real Symbol */}
+            <linearGradient id="realEmeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#047857" />
+              <stop offset="50%" stopColor="#059669" />
+              <stop offset="100%" stopColor="#065f46" />
             </linearGradient>
 
             {/* Filter for depth */}
             <filter id="logoDepth" x="-10%" y="-10%" width="120%" height="120%">
-              <feDropShadow dx="0" dy="2" stdDeviation="4" floodColor="#000000" floodOpacity="0.5" />
+              <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#000000" floodOpacity="0.25" />
             </filter>
           </defs>
 
-          {/* 1. Base Circular Container */}
+          {/* 1. Base Circular Container with White Disc and Gradient Ring */}
           <circle
             cx="256"
             cy="256"
             r="236"
-            fill="url(#dinheuroInnerBg)"
+            fill="url(#dinheuroDiscBg)"
             stroke="url(#dinheuroBorderGrad)"
-            strokeWidth="18"
+            strokeWidth="22"
           />
 
           {/* 2. Top Curved Yellow Arrow (pointing to the LEFT) */}
           <g filter="url(#logoDepth)">
             {/* Arc from right to left */}
             <path
-              d="M 390 196 A 166 166 0 0 0 134 184"
+              d="M 392 196 A 166 166 0 0 0 134 184"
               fill="none"
               stroke="url(#dinheuroArrowGrad)"
-              strokeWidth="16"
+              strokeWidth="18"
               strokeLinecap="round"
             />
             {/* Arrowhead at upper left pointing left */}
             <path
-              d="M 98 194 L 140 162 L 132 188 L 146 216 Z"
+              d="M 96 194 L 140 160 L 132 188 L 148 218 Z"
               fill="url(#dinheuroArrowGrad)"
             />
           </g>
@@ -111,29 +111,29 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
           <g filter="url(#logoDepth)">
             {/* Arc from left to right */}
             <path
-              d="M 122 316 A 166 166 0 0 0 378 328"
+              d="M 120 316 A 166 166 0 0 0 378 328"
               fill="none"
               stroke="url(#dinheuroArrowGrad)"
-              strokeWidth="16"
+              strokeWidth="18"
               strokeLinecap="round"
             />
             {/* Arrowhead at lower right pointing right */}
             <path
-              d="M 414 318 L 372 350 L 380 324 L 366 296 Z"
+              d="M 416 318 L 372 352 L 380 324 L 364 294 Z"
               fill="url(#dinheuroArrowGrad)"
             />
           </g>
 
           {/* 4. Center Symbols: Euro (€) in Dark Blue followed by Real (R$) in Green */}
           <g filter="url(#logoDepth)">
-            {/* Euro Symbol (€) in Dark Blue */}
+            {/* Euro Symbol (€) in Dark Navy Blue */}
             <text
-              x="180"
+              x="178"
               y="288"
               fontFamily="system-ui, -apple-system, sans-serif, 'Segoe UI', Roboto"
-              fontSize="148"
+              fontSize="152"
               fontWeight="900"
-              fill="url(#euroDarkBlueGrad)"
+              fill="url(#euroDarkNavyGrad)"
               textAnchor="middle"
               dominantBaseline="middle"
             >
@@ -142,12 +142,12 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
 
             {/* Real Symbol (R$) in Green */}
             <text
-              x="320"
+              x="322"
               y="288"
               fontFamily="system-ui, -apple-system, sans-serif, 'Segoe UI', Roboto"
-              fontSize="122"
+              fontSize="126"
               fontWeight="900"
-              fill="url(#realGreenGrad)"
+              fill="url(#realEmeraldGrad)"
               textAnchor="middle"
               dominantBaseline="middle"
             >
