@@ -6,6 +6,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import JSZip from "jszip";
+import { quotesService, ASSET_REGISTRY, LiveQuote } from "./src/services/quotesService";
 
 dotenv.config();
 
@@ -102,292 +103,14 @@ async function generateContentSafely(options: {
 }
 
 // ==========================================
-// REAL-TIME MARKET DATA ENGINE & CACHE
+// REAL-TIME MARKET DATA ROUTES (QUOTES SERVICE)
 // ==========================================
 
-interface LiveQuote {
-  id: string;
-  ticker: string;
-  name: string;
-  price: number;
-  change: number;
-  changePercent: number;
-  currency: string;
-  exchange: string;
-  category: string;
-  sparkline: number[];
-  high52w?: number;
-  low52w?: number;
-  open?: number;
-  high?: number;
-  low?: number;
-  volume?: string;
-  lastUpdated: string;
-}
-
-// Asset mapping to real-time external providers
-const ASSET_REGISTRY: Record<
-  string,
-  {
-    ticker: string;
-    name: string;
-    symbol: string;
-    category: string;
-    currency: string;
-    exchange: string;
-    type: "yf" | "crypto" | "fx";
-    basePrice: number;
-  }
-> = {
-  // América Latina (B3 & Latam)
-  ibovespa: { ticker: "IBOV", name: "Ibovespa Brasil", symbol: "^BVSP", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 183476 },
-  petr4: { ticker: "PETR4", name: "Petrobras PN", symbol: "PETR4.SA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 47.99 },
-  vale3: { ticker: "VALE3", name: "Vale ON", symbol: "VALE3.SA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 70.77 },
-  itub4: { ticker: "ITUB4", name: "Itaú Unibanco PN", symbol: "ITUB4.SA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 42.13 },
-  bbas3: { ticker: "BBAS3", name: "Banco do Brasil ON", symbol: "BBAS3.SA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 28.5 },
-  wege3: { ticker: "WEGE3", name: "WEG S.A. ON", symbol: "WEGE3.SA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 54.12 },
-  b3sa3: { ticker: "B3SA3", name: "B3 S.A. ON", symbol: "B3SA3.SA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 11.28 },
-  mglu3: { ticker: "MGLU3", name: "Magazine Luiza ON", symbol: "MGLU3.SA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 9.45 },
-  prio3: { ticker: "PRIO3", name: "PRIO S.A. ON", symbol: "PRIO3.SA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 44.8 },
-  embra3: { ticker: "EMBR3", name: "Embraer ON", symbol: "EMBR3.SA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 56.7 },
-  totv3: { ticker: "TOTS3", name: "Totvs ON", symbol: "TOTS3.SA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 32.15 },
-  sula11: { ticker: "EQTL3", name: "Equatorial Energia ON", symbol: "EQTL3.SA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 34.9 },
-  azulp4: { ticker: "AZUL4", name: "Azul Linhas Aéreas PN", symbol: "AZUL4.SA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 4.12 },
-  cmin3: { ticker: "CMIN3", name: "CSN Mineração ON", symbol: "CMIN3.SA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 5.48 },
-  csna3: { ticker: "CSNA3", name: "Siderúrgica Nacional ON", symbol: "CSNA3.SA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 10.35 },
-  crfb3: { ticker: "CRFB3", name: "Carrefour Brasil ON", symbol: "CRFB3.SA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 8.72 },
-  "sp-latin-america": { ticker: "S&P LATAM", name: "S&P Latin America 40", symbol: "^MXX", category: "América Latina", currency: "USD", exchange: "S&P Dow Jones", type: "yf", basePrice: 2894.4 },
-  igovernanca: { ticker: "IGCX", name: "Índice de Governança Corporativa", symbol: "^BVSP", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 14210 },
-  "ibrx-brasil": { ticker: "IBRA", name: "Índice Brasil Amplo", symbol: "^BVSP", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 5240 },
-
-  // EUA
-  "sp-500": { ticker: "S&P 500", name: "S&P 500 Index", symbol: "^GSPC", category: "EUA", currency: "USD", exchange: "NYSE / NASDAQ", type: "yf", basePrice: 7743.41 },
-  nasdaq: { ticker: "NASDAQ", name: "Nasdaq Composite", symbol: "^IXIC", category: "EUA", currency: "USD", exchange: "NASDAQ", type: "yf", basePrice: 27068.7 },
-  "dow-jones": { ticker: "DOW JONES", name: "Dow Jones Industrial Average", symbol: "^DJI", category: "EUA", currency: "USD", exchange: "NYSE", type: "yf", basePrice: 48920 },
-  "russell-2000": { ticker: "RUSSELL", name: "Russell 2000 Small Cap", symbol: "^RUT", category: "EUA", currency: "USD", exchange: "Russell", type: "yf", basePrice: 2360 },
-  vix: { ticker: "VIX", name: "CBOE Volatility Index", symbol: "^VIX", category: "EUA", currency: "USD", exchange: "CBOE", type: "yf", basePrice: 16.2 },
-  aapl: { ticker: "AAPL", name: "Apple Inc.", symbol: "AAPL", category: "EUA", currency: "USD", exchange: "NASDAQ", type: "yf", basePrice: 341.07 },
-  nvda: { ticker: "NVDA", name: "NVIDIA Corporation", symbol: "NVDA", category: "EUA", currency: "USD", exchange: "NASDAQ", type: "yf", basePrice: 225.07 },
-  msft: { ticker: "MSFT", name: "Microsoft Corporation", symbol: "MSFT", category: "EUA", currency: "USD", exchange: "NASDAQ", type: "yf", basePrice: 428.5 },
-  amzn: { ticker: "AMZN", name: "Amazon.com Inc.", symbol: "AMZN", category: "EUA", currency: "USD", exchange: "NASDAQ", type: "yf", basePrice: 212.4 },
-  googl: { ticker: "GOOGL", name: "Alphabet Inc.", symbol: "GOOGL", category: "EUA", currency: "USD", exchange: "NASDAQ", type: "yf", basePrice: 194.8 },
-  tsla: { ticker: "TSLA", name: "Tesla Inc.", symbol: "TSLA", category: "EUA", currency: "USD", exchange: "NASDAQ", type: "yf", basePrice: 254.2 },
-  meta: { ticker: "META", name: "Meta Platforms Inc.", symbol: "META", category: "EUA", currency: "USD", exchange: "NASDAQ", type: "yf", basePrice: 618.3 },
-
-  // Europa
-  dax: { ticker: "DAX 40", name: "DAX Performance Index", symbol: "^GDAXI", category: "Europa", currency: "EUR", exchange: "XETRA (Frankfurt)", type: "yf", basePrice: 25408.6 },
-  "ftse-100": { ticker: "FTSE 100", name: "FTSE 100 Index", symbol: "^FTSE", category: "Europa", currency: "GBP", exchange: "LSE (Londres)", type: "yf", basePrice: 10695.2 },
-  "cac-40": { ticker: "CAC 40", name: "CAC 40 Index", symbol: "^FCHI", category: "Europa", currency: "EUR", exchange: "Euronext Paris", type: "yf", basePrice: 8120 },
-  "ibex-35": { ticker: "IBEX 35", name: "IBEX 35 Index", symbol: "^IBEX", category: "Europa", currency: "EUR", exchange: "BME (Madri)", type: "yf", basePrice: 11840 },
-  "euro-stoxx-50": { ticker: "STOXX 50", name: "Euro Stoxx 50", symbol: "^STOXX50E", category: "Europa", currency: "EUR", exchange: "Euronext", type: "yf", basePrice: 5040 },
-
-  // Ásia
-  "nikkei-225": { ticker: "NIKKEI 225", name: "Nikkei 225 Index", symbol: "^N225", category: "Ásia", currency: "JPY", exchange: "TSE (Tóquio)", type: "yf", basePrice: 66333.5 },
-  "sse-composite": { ticker: "SSE COMP", name: "Shanghai Composite Index", symbol: "000001.SS", category: "Ásia", currency: "CNY", exchange: "SSE (Xangai)", type: "yf", basePrice: 3340 },
-  "hang-seng": { ticker: "HANG SENG", name: "Hang Seng Index", symbol: "^HSI", category: "Ásia", currency: "HKD", exchange: "HKEX (Hong Kong)", type: "yf", basePrice: 20850 },
-  "bse-sensex": { ticker: "SENSEX", name: "BSE Sensex 30", symbol: "^BSESN", category: "Ásia", currency: "INR", exchange: "BSE (Índia)", type: "yf", basePrice: 82140 },
-  "nifty-50": { ticker: "NIFTY 50", name: "Nifty 50 Index", symbol: "^NSEI", category: "Ásia", currency: "INR", exchange: "NSE (Índia)", type: "yf", basePrice: 25110 },
-  kospi: { ticker: "KOSPI", name: "Korea Composite Stock Price Index", symbol: "^KS11", category: "Ásia", currency: "KRW", exchange: "KRX (Seul)", type: "yf", basePrice: 2720 },
-
-  // Moedas
-  "usd-brl": { ticker: "USD / BRL", name: "Dólar Comercial", symbol: "BRL=X", category: "Moedas", currency: "BRL", exchange: "Mercado Interbancário", type: "yf", basePrice: 5.1866 },
-  "eur-brl": { ticker: "EUR / BRL", name: "Euro Comercial", symbol: "EURBRL=X", category: "Moedas", currency: "BRL", exchange: "Mercado Interbancário", type: "yf", basePrice: 5.9067 },
-  "gbp-brl": { ticker: "GBP / BRL", name: "Libra Esterlina", symbol: "GBPBRL=X", category: "Moedas", currency: "BRL", exchange: "Mercado Interbancário", type: "yf", basePrice: 6.945 },
-  "jpy-brl": { ticker: "JPY / BRL", name: "Iene Japonês", symbol: "JPYBRL=X", category: "Moedas", currency: "BRL", exchange: "Mercado Interbancário", type: "yf", basePrice: 0.0345 },
-  "usd-eur": { ticker: "EUR / USD", name: "Euro vs Dólar", symbol: "EUR=X", category: "Moedas", currency: "USD", exchange: "Forex Global", type: "yf", basePrice: 1.087 },
-
-  // Criptomoedas
-  bitcoin: { ticker: "BTC", name: "Bitcoin", symbol: "BTC-USD", category: "Criptomoedas", currency: "USD", exchange: "Cripto 24/7", type: "crypto", basePrice: 83430 },
-  ether: { ticker: "ETH", name: "Ethereum", symbol: "ETH-USD", category: "Criptomoedas", currency: "USD", exchange: "Cripto 24/7", type: "crypto", basePrice: 2654 },
-  solana: { ticker: "SOL", name: "Solana", symbol: "SOL-USD", category: "Criptomoedas", currency: "USD", exchange: "Cripto 24/7", type: "crypto", basePrice: 120.18 },
-  xrp: { ticker: "XRP", name: "Ripple XRP", symbol: "XRP-USD", category: "Criptomoedas", currency: "USD", exchange: "Cripto 24/7", type: "crypto", basePrice: 1.5 },
-  dogecoin: { ticker: "DOGE", name: "Dogecoin", symbol: "DOGE-USD", category: "Criptomoedas", currency: "USD", exchange: "Cripto 24/7", type: "crypto", basePrice: 0.185 },
-
-  // Contratos futuros & Commodities
-  "petroleo-brent": { ticker: "BRENT", name: "Petróleo Brent Futuro", symbol: "BZ=F", category: "Contratos futuros", currency: "USD", exchange: "ICE Futures Europe", type: "yf", basePrice: 98.21 },
-  "ouro-futuro": { ticker: "OURO", name: "Ouro Futuro (Gold COMEX)", symbol: "GC=F", category: "Contratos futuros", currency: "USD", exchange: "COMEX (NYMEX)", type: "yf", basePrice: 4235 },
-  "soja-futuro": { ticker: "SOJA", name: "Soja Grão Futuro", symbol: "ZS=F", category: "Contratos futuros", currency: "USD", exchange: "CBOT (Chicago)", type: "yf", basePrice: 1045 },
-  "gas-natural": { ticker: "GÁS NAT", name: "Gás Natural Henry Hub", symbol: "NG=F", category: "Contratos futuros", currency: "USD", exchange: "NYMEX", type: "yf", basePrice: 2.85 },
-  "sp-500-futuros": { ticker: "S&P FUT", name: "S&P 500 E-mini Futuros", symbol: "ES=F", category: "Contratos futuros", currency: "USD", exchange: "CME Group", type: "yf", basePrice: 7755 },
-};
-
-// In-memory quote cache
-const quotesCache: {
-  timestamp: number;
-  data: Record<string, LiveQuote>;
-} = {
-  timestamp: 0,
-  data: {},
-};
-
-// Helper: Fetch a single symbol from Yahoo Finance Chart API
-async function fetchYahooQuote(symbol: string): Promise<{
-  price: number;
-  prevClose: number;
-  open?: number;
-  high?: number;
-  low?: number;
-  high52?: number;
-  low52?: number;
-  volume?: number;
-  sparkline: number[];
-} | null> {
-  try {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1d&interval=15m`;
-    const res = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        Accept: "application/json",
-      },
-    });
-    if (!res.ok) return null;
-    const json = await res.json();
-    const result = json?.chart?.result?.[0];
-    if (!result) return null;
-
-    const meta = result.meta;
-    const quote = result.indicators?.quote?.[0];
-    const closes: number[] = (quote?.close || []).filter((v: any) => typeof v === "number" && !isNaN(v));
-
-    const price = meta?.regularMarketPrice || (closes.length > 0 ? closes[closes.length - 1] : 0);
-    const prevClose = meta?.chartPreviousClose || meta?.previousClose || price;
-
-    const sparkline = closes.length >= 6 ? closes.slice(-12) : [prevClose, price];
-
-    return {
-      price,
-      prevClose,
-      open: meta?.regularMarketOpen,
-      high: meta?.regularMarketDayHigh,
-      low: meta?.regularMarketDayLow,
-      high52: meta?.fiftyTwoWeekHigh,
-      low52: meta?.fiftyTwoWeekLow,
-      volume: meta?.regularMarketVolume,
-      sparkline,
-    };
-  } catch {
-    return null;
-  }
-}
-
-// Helper: Fetch Crypto from CoinGecko
-async function fetchCoinGeckoCrypto(): Promise<Record<string, { price: number; change24h: number; high24h?: number; low24h?: number }> | null> {
-  try {
-    const url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,ripple,dogecoin&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true";
-    const res = await fetch(url, {
-      headers: { Accept: "application/json" },
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return {
-      bitcoin: { price: data.bitcoin?.usd, change24h: data.bitcoin?.usd_24h_change || 0 },
-      ether: { price: data.ethereum?.usd, change24h: data.ethereum?.usd_24h_change || 0 },
-      solana: { price: data.solana?.usd, change24h: data.solana?.usd_24h_change || 0 },
-      xrp: { price: data.ripple?.usd, change24h: data.ripple?.usd_24h_change || 0 },
-      dogecoin: { price: data.dogecoin?.usd, change24h: data.dogecoin?.usd_24h_change || 0 },
-    };
-  } catch {
-    return null;
-  }
-}
-
-// Master refresh for all quotes
-async function updateAllQuotes(): Promise<Record<string, LiveQuote>> {
-  const now = Date.now();
-  // Cache valid for 10 seconds
-  if (quotesCache.timestamp > 0 && now - quotesCache.timestamp < 10000 && Object.keys(quotesCache.data).length > 0) {
-    return quotesCache.data;
-  }
-
-  const cryptoData = await fetchCoinGeckoCrypto();
-  const entries = Object.entries(ASSET_REGISTRY);
-
-  // Fetch in parallel chunks of 10 to avoid throttling
-  const chunkSize = 10;
-  for (let i = 0; i < entries.length; i += chunkSize) {
-    const chunk = entries.slice(i, i + chunkSize);
-    await Promise.all(
-      chunk.map(async ([id, reg]) => {
-        try {
-          let price = reg.basePrice;
-          let prevClose = reg.basePrice;
-          let sparkline: number[] = [reg.basePrice * 0.99, reg.basePrice];
-          let open = reg.basePrice;
-          let high = reg.basePrice * 1.01;
-          let low = reg.basePrice * 0.99;
-          let high52 = reg.basePrice * 1.25;
-          let low52 = reg.basePrice * 0.8;
-          let volumeStr = "R$ 450 Mi";
-
-          // Check if crypto data available
-          if (reg.type === "crypto" && cryptoData && cryptoData[id]) {
-            const cInfo = cryptoData[id];
-            price = cInfo.price;
-            const pct = cInfo.change24h;
-            prevClose = price / (1 + pct / 100);
-            sparkline = [prevClose, (prevClose + price) / 2, price];
-            high = Math.max(price, prevClose) * 1.02;
-            low = Math.min(price, prevClose) * 0.98;
-          } else {
-            // Yahoo Finance Fetch
-            const yfData = await fetchYahooQuote(reg.symbol);
-            if (yfData && yfData.price > 0) {
-              price = yfData.price;
-              prevClose = yfData.prevClose || yfData.price;
-              if (yfData.sparkline.length > 0) {
-                sparkline = yfData.sparkline;
-              }
-              open = yfData.open || prevClose;
-              high = yfData.high || Math.max(price, prevClose);
-              low = yfData.low || Math.min(price, prevClose);
-              high52 = yfData.high52 || price * 1.2;
-              low52 = yfData.low52 || price * 0.8;
-              if (yfData.volume) {
-                volumeStr =
-                  reg.currency === "BRL"
-                    ? `R$ ${(yfData.volume / 1000000).toFixed(1)} Mi`
-                    : `US$ ${(yfData.volume / 1000000).toFixed(1)} Mi`;
-              }
-            }
-          }
-
-          const change = price - prevClose;
-          const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0;
-
-          quotesCache.data[id] = {
-            id,
-            ticker: reg.ticker,
-            name: reg.name,
-            price: Number(price.toFixed(price < 10 ? 4 : 2)),
-            change: Number(change.toFixed(price < 10 ? 4 : 2)),
-            changePercent: Number(changePercent.toFixed(2)),
-            currency: reg.currency,
-            exchange: reg.exchange,
-            category: reg.category,
-            sparkline: sparkline.map((v) => Number(v.toFixed(2))),
-            open: Number(open.toFixed(2)),
-            high: Number(high.toFixed(2)),
-            low: Number(low.toFixed(2)),
-            high52w: Number((high52 || price * 1.2).toFixed(2)),
-            low52w: Number((low52 || price * 0.8).toFixed(2)),
-            volume: volumeStr,
-            lastUpdated: new Date().toISOString(),
-          };
-        } catch (err: any) {
-          console.warn(`Failed quote for ${id}:`, err?.message);
-        }
-      })
-    );
-  }
-
-  quotesCache.timestamp = Date.now();
-  return quotesCache.data;
-}
-
 // API: Live Quotes for all categories
-app.get("/api/market/quotes", async (_req, res) => {
+app.get("/api/market/quotes", async (req, res) => {
   try {
-    const quotes = await updateAllQuotes();
+    const forceRefresh = req.query.refresh === "true" || req.query.force === "true";
+    const quotes = await quotesService.updateAllQuotes(forceRefresh);
     res.json({
       success: true,
       count: Object.keys(quotes).length,
@@ -395,7 +118,7 @@ app.get("/api/market/quotes", async (_req, res) => {
       quotes,
     });
   } catch (error: any) {
-    console.error("Error in /api/market/quotes:", error);
+    console.error("[Server] Error in /api/market/quotes:", error);
     res.status(500).json({ success: false, error: "Falha ao obter cotações em tempo real." });
   }
 });
@@ -647,9 +370,9 @@ app.get("/api/market/news", async (req, res) => {
 // API: Live Market Movers computed dynamically
 app.get("/api/market/movers", async (_req, res) => {
   try {
-    const quotes = await updateAllQuotes();
-    const b3List = Object.values(quotes).filter(
-      (q) => q.category === "América Latina" && q.ticker !== "IBOV" && !q.ticker.includes("Índice")
+    const quotes: Record<string, LiveQuote> = await quotesService.getQuotes();
+    const b3List: LiveQuote[] = Object.values(quotes).filter(
+      (q: LiveQuote) => q.category === "América Latina" && q.ticker !== "IBOV" && !q.ticker.includes("Índice")
     );
 
     const sortedByGain = [...b3List].sort((a, b) => b.changePercent - a.changePercent);
@@ -672,7 +395,7 @@ app.get("/api/market/movers", async (_req, res) => {
       },
     });
   } catch (error: any) {
-    console.error("Error in /api/market/movers:", error);
+    console.error("[Server] Error in /api/market/movers:", error);
     res.status(500).json({ success: false, error: "Falha ao calcular destaques de mercado." });
   }
 });
