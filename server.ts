@@ -471,29 +471,17 @@ app.get("/api/export-project-zip", async (_req, res) => {
   }
 });
 
-// AI Market Summary by Region with Live Real-time Context
+// AI Market Summary by Region
 app.post("/api/market-ai/summary", async (req, res) => {
   try {
-    const { region, topic, recentNews, quotesSummary } = req.body;
-    const now = new Date();
-    const timeFormatted = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-
-    const newsContext = Array.isArray(recentNews) && recentNews.length > 0
-      ? `\nManchetes Recentes em Tempo Real:\n${recentNews.slice(0, 5).map((n: any) => `- ${n.title || n}`).join("\n")}`
-      : "";
-
-    const quotesContext = quotesSummary ? `\nCotações Principais: ${quotesSummary}` : "";
-
-    const prompt = `Você é o analista-chefe de inteligência financeira do portal DinhEuro.com (foco em investidores institucionais e de varejo).
-Horário da Leitura: Hoje às ${timeFormatted}.
-Região Analisada: "${region || "Global"}".
-Tema/Foco: "${topic || "Geral"}".${quotesContext}${newsContext}
-
-Gere uma síntese macroeconômica e analítica com base nas notícias e no fluxo de mercado capturados acima:
-1. **Sentimento Atual**: Direção dos índices e apetite ao risco hoje.
-2. **Catalisadores Reais**: Destaque o impacto das manchetes recentes (inflação, juros, balanços, commodities ou câmbio).
-3. **Diretriz Prática**: O que o investidor e trader deve observar nas próximas horas.
-Estruture em 2 a 3 parágrafos claros, profissionais, sem jargões excessivos e diretamente conectados aos fatos de mercado informados.`;
+    const { region, topic } = req.body;
+    const prompt = `Você é o analista-chefe de inteligência financeira do portal DinhEuro.com (inspirado no Google Finanças com foco em investidores e traders).
+Gere uma análise concisa, técnica e perspicaz em português sobre o mercado de "${region || "Global"}" no tema "${topic || "Geral"}".
+Destaque:
+1. Sentimento macroeconômico atual com dados em tempo real.
+2. Principais vetores e catalisadores (juros, inflação, balanços, commodities ou geopolítica).
+3. O que o investidor deve monitorar hoje.
+Mantenha o tom profissional, direto e sem jargões desnecessários, com 2 a 3 parágrafos objetivos.`;
 
     const aiText = await generateContentSafely({
       contents: prompt,
@@ -506,25 +494,21 @@ Estruture em 2 a 3 parágrafos claros, profissionais, sem jargões excessivos e 
 
     res.json({
       success: true,
-      region: region || "Global",
-      topic: topic || "Geral",
+      region,
+      topic,
       analysis: finalAnalysis,
-      generatedAt: `Hoje às ${timeFormatted}`,
-      sources: ["DinhEuro Intelligence AI", "Feed em Tempo Real", "Consenso de Analistas"],
-      timestamp: now.toISOString(),
+      sources: ["DinhEuro Intelligence AI", "Termômetro de Liquidez Global", "Consenso de Analistas"],
+      timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
-    console.error("[Server] Error in market summary endpoint:", error);
-    const now = new Date();
-    const timeFormatted = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    console.error("Error in market summary endpoint:", error);
     res.json({
       success: true,
       region: req.body?.region || "Global",
       topic: req.body?.topic || "Geral",
       analysis: "Mercados globais mostram acomodação com atenção aos discursos de bancos centrais e balanços corporativos.",
-      generatedAt: `Hoje às ${timeFormatted}`,
       sources: ["DinhEuro Intelligence AI"],
-      timestamp: now.toISOString(),
+      timestamp: new Date().toISOString(),
     });
   }
 });

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Asset } from "../types/finance";
 import { BrandLogo } from "./BrandLogo";
-import { formatAssetDisplayPrice, formatForexRate, formatPoints } from "../utils/formatters";
 import {
   Search,
   Menu,
@@ -69,132 +68,129 @@ export const Header: React.FC<HeaderProps> = ({
   const btc = liveAssets.find((a) => a.id === "bitcoin" || a.ticker === "BTC");
   const petr = liveAssets.find((a) => a.id === "petr4" || a.ticker === "PETR4");
 
-  const renderTickerValue = (asset?: Asset, formatType: "points" | "forex" | "crypto" | "price" = "price") => {
-    if (!asset || !asset.price || asset.price === 0) {
-      return <span className="inline-block w-14 h-3.5 bg-[#21262d] animate-pulse rounded-md"></span>;
-    }
-
-    if (formatType === "points") {
-      return formatPoints(asset.price);
-    }
-    if (formatType === "forex") {
-      return `R$ ${formatForexRate(asset.price, 4)}`;
-    }
-    if (formatType === "crypto") {
-      return `US$ ${asset.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
-    return formatAssetDisplayPrice(asset.price, asset.currency, asset.id, asset.ticker, asset.name);
-  };
-
-  const renderTickerChange = (asset?: Asset) => {
-    if (!asset || asset.changePercent === undefined || (!asset.price && asset.changePercent === 0)) {
-      return <span className="inline-block w-10 h-3 bg-[#21262d] animate-pulse rounded-md ml-1"></span>;
-    }
-    const isPositive = asset.changePercent >= 0;
-    return (
-      <span className={`font-mono text-[11px] font-semibold ${isPositive ? "text-[#00c853]" : "text-[#ff5252]"}`}>
-        {isPositive ? "+" : ""}
-        {asset.changePercent.toFixed(2)}%
-      </span>
-    );
-  };
-
   return (
     <header
-      style={{ paddingTop: "max(12px, env(safe-area-inset-top))" }}
       className={`sticky top-0 z-40 w-full transition-all duration-200 ${
         isScrolled
           ? "bg-[#0e1117]/95 backdrop-blur-md border-b border-[#30363d] shadow-lg shadow-black/40"
           : "bg-[#0e1117] border-b border-[#21262d]"
       }`}
     >
-      {/* Top Ticker Micro-Bar with Real-Time Data & Safe Padding */}
-      <div
-        style={{
-          padding: "12px 16px",
-          gap: "12px",
-          WebkitOverflowScrolling: "touch",
-        }}
-        className="w-full bg-[#161b22] border-b border-[#21262d] text-xs text-[#8b949e] flex items-center justify-between overflow-x-auto scrollbar-none"
-      >
+      {/* Top Ticker Micro-Bar with Real-Time Data */}
+      <div className="w-full bg-[#161b22] border-b border-[#21262d] px-4 py-1 text-xs text-[#8b949e] flex items-center justify-between overflow-x-auto scrollbar-none">
         <div className="flex items-center gap-4 shrink-0">
-          <div className="flex items-center gap-1.5 font-medium text-[#e6edf3] shrink-0">
+          <div className="flex items-center gap-1.5 font-medium text-[#e6edf3]">
             <span className="w-2 h-2 rounded-full bg-[#00c853] animate-pulse"></span>
             <span className="text-[11px] uppercase tracking-wider font-semibold text-[#00c853]">AO VIVO</span>
           </div>
 
           <span className="text-[#30363d]">|</span>
 
-          <div className="flex items-center gap-4 sm:gap-6 shrink-0">
-            {/* IBOV - Formatted in Points (pts) */}
+          <div className="flex items-center gap-4">
+            {/* IBOV */}
             <div
               onClick={() => ibov && onSelectAsset(ibov)}
-              className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity shrink-0 select-none min-h-[20px]"
-              title="Ibovespa em tempo real (pts)"
+              className="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
+              title="Ibovespa em tempo real"
             >
               <span className="text-[#8b949e] font-semibold text-[11px]">IBOV</span>
-              <span className="text-[#e6edf3] font-mono text-[11px] font-bold">
-                {renderTickerValue(ibov, "points")}
+              <span className="text-[#e6edf3] font-mono text-[11px]">
+                {ibov ? ibov.price.toLocaleString("pt-BR", { maximumFractionDigits: 0 }) : "183.477"} pts
               </span>
-              {renderTickerChange(ibov)}
+              <span
+                className={`font-mono text-[11px] font-semibold ${
+                  (ibov?.changePercent ?? 0) >= 0 ? "text-[#00c853]" : "text-[#ff5252]"
+                }`}
+              >
+                {(ibov?.changePercent ?? 0) >= 0 ? "+" : ""}
+                {(ibov?.changePercent ?? 0).toFixed(2)}%
+              </span>
             </div>
 
             {/* S&P 500 */}
             <div
               onClick={() => sp500 && onSelectAsset(sp500)}
-              className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity shrink-0 select-none min-h-[20px]"
-              title="S&P 500 em tempo real (pts)"
+              className="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
+              title="S&P 500 em tempo real"
             >
               <span className="text-[#8b949e] font-semibold text-[11px]">S&P 500</span>
-              <span className="text-[#e6edf3] font-mono text-[11px] font-bold">
-                {renderTickerValue(sp500, "points")}
+              <span className="text-[#e6edf3] font-mono text-[11px]">
+                {sp500 ? sp500.price.toLocaleString("en-US", { maximumFractionDigits: 1 }) : "7.743"}
               </span>
-              {renderTickerChange(sp500)}
+              <span
+                className={`font-mono text-[11px] font-semibold ${
+                  (sp500?.changePercent ?? 0) >= 0 ? "text-[#00c853]" : "text-[#ff5252]"
+                }`}
+              >
+                {(sp500?.changePercent ?? 0) >= 0 ? "+" : ""}
+                {(sp500?.changePercent ?? 0).toFixed(2)}%
+              </span>
             </div>
 
             {/* USD/BRL */}
             <div
               onClick={() => usdBrl && onSelectAsset(usdBrl)}
-              className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity shrink-0 select-none min-h-[20px]"
+              className="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
               title="Dólar Comercial em tempo real"
             >
               <span className="text-[#8b949e] font-semibold text-[11px]">USD/BRL</span>
-              <span className="text-[#e6edf3] font-mono text-[11px] font-bold">
-                {renderTickerValue(usdBrl, "forex")}
+              <span className="text-[#e6edf3] font-mono text-[11px]">
+                R$ {usdBrl ? usdBrl.price.toFixed(4) : "5,1866"}
               </span>
-              {renderTickerChange(usdBrl)}
+              <span
+                className={`font-mono text-[11px] font-semibold ${
+                  (usdBrl?.changePercent ?? 0) >= 0 ? "text-[#00c853]" : "text-[#ff5252]"
+                }`}
+              >
+                {(usdBrl?.changePercent ?? 0) >= 0 ? "+" : ""}
+                {(usdBrl?.changePercent ?? 0).toFixed(2)}%
+              </span>
             </div>
 
             {/* BTC */}
             <div
               onClick={() => btc && onSelectAsset(btc)}
-              className="hidden sm:flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity shrink-0 select-none min-h-[20px]"
+              className="hidden sm:flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
               title="Bitcoin em tempo real"
             >
               <span className="text-[#8b949e] font-semibold text-[11px]">BTC</span>
-              <span className="text-[#e6edf3] font-mono text-[11px] font-bold">
-                {renderTickerValue(btc, "crypto")}
+              <span className="text-[#e6edf3] font-mono text-[11px]">
+                US$ {btc ? btc.price.toLocaleString("en-US", { maximumFractionDigits: 0 }) : "83.430"}
               </span>
-              {renderTickerChange(btc)}
+              <span
+                className={`font-mono text-[11px] font-semibold ${
+                  (btc?.changePercent ?? 0) >= 0 ? "text-[#00c853]" : "text-[#ff5252]"
+                }`}
+              >
+                {(btc?.changePercent ?? 0) >= 0 ? "+" : ""}
+                {(btc?.changePercent ?? 0).toFixed(2)}%
+              </span>
             </div>
 
             {/* PETR4 */}
             <div
               onClick={() => petr && onSelectAsset(petr)}
-              className="hidden md:flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity shrink-0 select-none min-h-[20px]"
+              className="hidden md:flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
               title="Petrobras PN em tempo real"
             >
               <span className="text-[#8b949e] font-semibold text-[11px]">PETR4</span>
-              <span className="text-[#e6edf3] font-mono text-[11px] font-bold">
-                {renderTickerValue(petr, "price")}
+              <span className="text-[#e6edf3] font-mono text-[11px]">
+                R$ {petr ? petr.price.toFixed(2) : "47,99"}
               </span>
-              {renderTickerChange(petr)}
+              <span
+                className={`font-mono text-[11px] font-semibold ${
+                  (petr?.changePercent ?? 0) >= 0 ? "text-[#00c853]" : "text-[#ff5252]"
+                }`}
+              >
+                {(petr?.changePercent ?? 0) >= 0 ? "+" : ""}
+                {(petr?.changePercent ?? 0).toFixed(2)}%
+              </span>
             </div>
           </div>
         </div>
 
         {/* Right Info & Live Refresh Trigger */}
-        <div className="flex items-center gap-3 text-[#8b949e] text-xs shrink-0 pl-4">
+        <div className="flex items-center gap-3 text-[#8b949e] text-xs shrink-0">
           <div className="hidden lg:flex items-center gap-1.5 font-mono text-[11px]">
             <Clock className="w-3 h-3 text-[#8b949e]" />
             <span>Atualizado: {lastUpdatedTime || "Em tempo real"}</span>
@@ -204,7 +200,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onManualRefresh}
               disabled={isRefreshing}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#21262d] hover:bg-[#30363d] text-[#58a6ff] hover:text-white transition-colors cursor-pointer text-[11px] font-medium border border-[#30363d]"
+              className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#21262d] hover:bg-[#30363d] text-[#58a6ff] hover:text-white transition-colors cursor-pointer text-[11px] font-medium border border-[#30363d]"
               title="Atualizar cotações agora"
             >
               <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin" : ""}`} />
@@ -225,15 +221,9 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Main Navigation Row */}
-      <div
-        style={{
-          padding: "12px 16px",
-          gap: "12px",
-        }}
-        className="max-w-7xl mx-auto flex items-center justify-between flex-wrap sm:flex-nowrap"
-      >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         {/* Left: Hamburger & Brand Logo */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-3">
           <button
             id="btn-toggle-sidebar"
             onClick={onOpenSidebar}
@@ -254,7 +244,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Center: Global Search Bar */}
-        <div className="flex-1 min-w-[220px] max-w-2xl order-3 sm:order-2 w-full sm:w-auto">
+        <div className="flex-1 max-w-2xl">
           <div
             id="global-search-trigger"
             onClick={onOpenSearch}
@@ -275,7 +265,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Right: Quick Actions */}
-        <div className="flex items-center gap-2 shrink-0 order-2 sm:order-3">
+        <div className="flex items-center gap-2">
           {/* Watchlist Quick Button */}
           <button
             id="btn-header-watchlist"

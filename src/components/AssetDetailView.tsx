@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Asset, NewsItem } from "../types/finance";
 import { InteractiveChart } from "./InteractiveChart";
 import { Sparkline } from "./Sparkline";
+import { ALL_ASSETS, PORTAL_NEWS } from "../data/mockMarketData";
 import {
   ArrowLeft,
   Bookmark,
@@ -22,8 +23,6 @@ import {
   Share2,
 } from "lucide-react";
 
-import { formatAssetDisplayPrice, formatForexRate, formatPoints } from "../utils/formatters";
-
 interface AssetDetailViewProps {
   asset: Asset;
   onBack: () => void;
@@ -41,7 +40,7 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
   isWatchlisted,
   onToggleWatchlist,
   onOpenPortfolio,
-  allAssets = [],
+  allAssets = ALL_ASSETS,
 }) => {
   const [aiAnalysis, setAiAnalysis] = useState<{
     summary?: string;
@@ -101,13 +100,29 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
   const isPositive = asset.changePercent >= 0;
 
   // Related assets mapping
-  const currentPool = allAssets || [];
+  const currentPool = allAssets && allAssets.length > 0 ? allAssets : ALL_ASSETS;
   const relatedAssets = currentPool.filter((a) =>
     asset.relatedAssetIds?.includes(a.id)
   );
 
   const formatPrice = (price: number, currency: string) => {
-    return formatAssetDisplayPrice(price, currency, asset.id, asset.ticker, asset.name);
+    if (currency === "BRL") {
+      return price >= 1000
+        ? `R$ ${price.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : `R$ ${price.toFixed(2)}`;
+    }
+    if (currency === "USD") {
+      return price >= 1000
+        ? `US$ ${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : `US$ ${price.toFixed(2)}`;
+    }
+    if (currency === "EUR") {
+      return `€ ${price.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    if (currency === "GBP") {
+      return `£ ${price.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    return `${price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
   };
 
   const handleShare = () => {
