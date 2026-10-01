@@ -36,8 +36,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<RegionalTab>("América Latina");
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
 
-  // Live real-time market feeds state (populated strictly from API response)
-  const [liveAssets, setLiveAssets] = useState<Asset[]>([]);
+  // Live real-time market feeds state
+  const [liveAssets, setLiveAssets] = useState<Asset[]>(ALL_ASSETS);
   const [liveNews, setLiveNews] = useState<NewsItem[] | null>(null);
   const [liveMovers, setLiveMovers] = useState<{
     mostActive: MarketMoverItem[];
@@ -65,13 +65,13 @@ export default function App() {
   const [pwaModalOpen, setPwaModalOpen] = useState(false);
   const [deepDiveTopic, setDeepDiveTopic] = useState<AIAccordionTopic | null>(null);
 
-  // Helper to construct asset objects strictly from active API quotes
+  // Helper to merge live quotes into asset objects
   const mergeQuotesIntoAssets = useCallback(
     (quotes: Record<string, LiveQuotePayload>) => {
-      setLiveAssets(() => {
-        return ALL_ASSETS.map((asset) => {
+      setLiveAssets((prevAssets) => {
+        return prevAssets.map((asset) => {
           const quote = quotes[asset.id];
-          if (!quote) return null;
+          if (!quote) return asset;
 
           const updated: Asset = {
             ...asset,
@@ -81,12 +81,12 @@ export default function App() {
             sparkline:
               quote.sparkline && quote.sparkline.length > 0
                 ? quote.sparkline
-                : [quote.price],
+                : asset.sparkline,
             metrics: {
               ...asset.metrics,
-              open: quote.open !== undefined ? quote.open : quote.price - quote.change,
-              high: quote.high !== undefined ? quote.high : quote.price,
-              low: quote.low !== undefined ? quote.low : quote.price,
+              open: quote.open !== undefined ? quote.open : asset.metrics.open,
+              high: quote.high !== undefined ? quote.high : asset.metrics.high,
+              low: quote.low !== undefined ? quote.low : asset.metrics.low,
               high52w: quote.high52w !== undefined ? quote.high52w : asset.metrics.high52w,
               low52w: quote.low52w !== undefined ? quote.low52w : asset.metrics.low52w,
               prevClose: quote.price - quote.change,
@@ -95,7 +95,7 @@ export default function App() {
           };
 
           return updated;
-        }).filter(Boolean) as Asset[];
+        });
       });
 
       // Keep selectedAsset updated in real time if open

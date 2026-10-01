@@ -64,28 +64,7 @@ export const NewsSection: React.FC<NewsSectionProps> = ({ onSelectTicker, liveNe
 
           {/* News Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {!liveNews ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={`news-skeleton-${i}`}
-                  className="bg-[#0e1117]/60 border border-[#30363d]/70 rounded-xl p-4 flex flex-col justify-between h-40 animate-pulse"
-                >
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <div className="h-3.5 w-20 bg-[#21262d] rounded" />
-                      <div className="h-3 w-14 bg-[#21262d] rounded" />
-                    </div>
-                    <div className="h-4 w-full bg-[#21262d] rounded mt-2" />
-                    <div className="h-4 w-4/5 bg-[#21262d] rounded" />
-                  </div>
-                  <div className="pt-3 border-t border-[#21262d] flex justify-between items-center">
-                    <div className="h-3.5 w-16 bg-[#21262d] rounded" />
-                    <div className="h-3.5 w-16 bg-[#21262d] rounded" />
-                  </div>
-                </div>
-              ))
-            ) : (
-              filteredNews.map((news) => (
+            {filteredNews.map((news) => (
               <a
                 key={news.id}
                 href={news.url || "#"}
@@ -141,7 +120,7 @@ export const NewsSection: React.FC<NewsSectionProps> = ({ onSelectTicker, liveNe
                   </span>
                 </div>
               </a>
-            )))}
+            ))}
           </div>
         </div>
       </div>

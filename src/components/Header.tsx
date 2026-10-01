@@ -94,23 +94,17 @@ export const Header: React.FC<HeaderProps> = ({
               title="Ibovespa em tempo real"
             >
               <span className="text-[#8b949e] font-semibold text-[11px]">IBOV</span>
-              {ibov ? (
-                <>
-                  <span className="text-[#e6edf3] font-mono text-[11px]">
-                    {ibov.price.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} pts
-                  </span>
-                  <span
-                    className={`font-mono text-[11px] font-semibold ${
-                      ibov.changePercent >= 0 ? "text-[#00c853]" : "text-[#ff5252]"
-                    }`}
-                  >
-                    {ibov.changePercent >= 0 ? "+" : ""}
-                    {ibov.changePercent.toFixed(2)}%
-                  </span>
-                </>
-              ) : (
-                <div className="w-14 h-3.5 bg-[#21262d] rounded animate-pulse inline-block" />
-              )}
+              <span className="text-[#e6edf3] font-mono text-[11px]">
+                {ibov ? ibov.price.toLocaleString("pt-BR", { maximumFractionDigits: 0 }) : "183.477"} pts
+              </span>
+              <span
+                className={`font-mono text-[11px] font-semibold ${
+                  (ibov?.changePercent ?? 0) >= 0 ? "text-[#00c853]" : "text-[#ff5252]"
+                }`}
+              >
+                {(ibov?.changePercent ?? 0) >= 0 ? "+" : ""}
+                {(ibov?.changePercent ?? 0).toFixed(2)}%
+              </span>
             </div>
 
             {/* S&P 500 */}
@@ -120,23 +114,17 @@ export const Header: React.FC<HeaderProps> = ({
               title="S&P 500 em tempo real"
             >
               <span className="text-[#8b949e] font-semibold text-[11px]">S&P 500</span>
-              {sp500 ? (
-                <>
-                  <span className="text-[#e6edf3] font-mono text-[11px]">
-                    {sp500.price.toLocaleString("en-US", { maximumFractionDigits: 1 })}
-                  </span>
-                  <span
-                    className={`font-mono text-[11px] font-semibold ${
-                      sp500.changePercent >= 0 ? "text-[#00c853]" : "text-[#ff5252]"
-                    }`}
-                  >
-                    {sp500.changePercent >= 0 ? "+" : ""}
-                    {sp500.changePercent.toFixed(2)}%
-                  </span>
-                </>
-              ) : (
-                <div className="w-14 h-3.5 bg-[#21262d] rounded animate-pulse inline-block" />
-              )}
+              <span className="text-[#e6edf3] font-mono text-[11px]">
+                {sp500 ? sp500.price.toLocaleString("en-US", { maximumFractionDigits: 1 }) : "7.743"}
+              </span>
+              <span
+                className={`font-mono text-[11px] font-semibold ${
+                  (sp500?.changePercent ?? 0) >= 0 ? "text-[#00c853]" : "text-[#ff5252]"
+                }`}
+              >
+                {(sp500?.changePercent ?? 0) >= 0 ? "+" : ""}
+                {(sp500?.changePercent ?? 0).toFixed(2)}%
+              </span>
             </div>
 
             {/* USD/BRL */}
@@ -146,23 +134,17 @@ export const Header: React.FC<HeaderProps> = ({
               title="Dólar Comercial em tempo real"
             >
               <span className="text-[#8b949e] font-semibold text-[11px]">USD/BRL</span>
-              {usdBrl ? (
-                <>
-                  <span className="text-[#e6edf3] font-mono text-[11px]">
-                    R$ {usdBrl.price.toFixed(4)}
-                  </span>
-                  <span
-                    className={`font-mono text-[11px] font-semibold ${
-                      usdBrl.changePercent >= 0 ? "text-[#00c853]" : "text-[#ff5252]"
-                    }`}
-                  >
-                    {usdBrl.changePercent >= 0 ? "+" : ""}
-                    {usdBrl.changePercent.toFixed(2)}%
-                  </span>
-                </>
-              ) : (
-                <div className="w-16 h-3.5 bg-[#21262d] rounded animate-pulse inline-block" />
-              )}
+              <span className="text-[#e6edf3] font-mono text-[11px]">
+                R$ {usdBrl ? usdBrl.price.toFixed(4) : "5,1866"}
+              </span>
+              <span
+                className={`font-mono text-[11px] font-semibold ${
+                  (usdBrl?.changePercent ?? 0) >= 0 ? "text-[#00c853]" : "text-[#ff5252]"
+                }`}
+              >
+                {(usdBrl?.changePercent ?? 0) >= 0 ? "+" : ""}
+                {(usdBrl?.changePercent ?? 0).toFixed(2)}%
+              </span>
             </div>
 
             {/* BTC */}
@@ -172,24 +154,17 @@ export const Header: React.FC<HeaderProps> = ({
               title="Bitcoin em tempo real"
             >
               <span className="text-[#8b949e] font-semibold text-[11px]">BTC</span>
-              {btc ? (
-                <>
-                  <span className="text-[#e6edf3] font-mono text-[11px]">
-                    {btc.currency === "BRL" ? "R$ " : "US$ "}
-                    {btc.price.toLocaleString(btc.currency === "BRL" ? "pt-BR" : "en-US", { maximumFractionDigits: 0 })}
-                  </span>
-                  <span
-                    className={`font-mono text-[11px] font-semibold ${
-                      btc.changePercent >= 0 ? "text-[#00c853]" : "text-[#ff5252]"
-                    }`}
-                  >
-                    {btc.changePercent >= 0 ? "+" : ""}
-                    {btc.changePercent.toFixed(2)}%
-                  </span>
-                </>
-              ) : (
-                <div className="w-16 h-3.5 bg-[#21262d] rounded animate-pulse inline-block" />
-              )}
+              <span className="text-[#e6edf3] font-mono text-[11px]">
+                US$ {btc ? btc.price.toLocaleString("en-US", { maximumFractionDigits: 0 }) : "83.430"}
+              </span>
+              <span
+                className={`font-mono text-[11px] font-semibold ${
+                  (btc?.changePercent ?? 0) >= 0 ? "text-[#00c853]" : "text-[#ff5252]"
+                }`}
+              >
+                {(btc?.changePercent ?? 0) >= 0 ? "+" : ""}
+                {(btc?.changePercent ?? 0).toFixed(2)}%
+              </span>
             </div>
 
             {/* PETR4 */}
@@ -199,23 +174,17 @@ export const Header: React.FC<HeaderProps> = ({
               title="Petrobras PN em tempo real"
             >
               <span className="text-[#8b949e] font-semibold text-[11px]">PETR4</span>
-              {petr ? (
-                <>
-                  <span className="text-[#e6edf3] font-mono text-[11px]">
-                    R$ {petr.price.toFixed(2)}
-                  </span>
-                  <span
-                    className={`font-mono text-[11px] font-semibold ${
-                      petr.changePercent >= 0 ? "text-[#00c853]" : "text-[#ff5252]"
-                    }`}
-                  >
-                    {petr.changePercent >= 0 ? "+" : ""}
-                    {petr.changePercent.toFixed(2)}%
-                  </span>
-                </>
-              ) : (
-                <div className="w-14 h-3.5 bg-[#21262d] rounded animate-pulse inline-block" />
-              )}
+              <span className="text-[#e6edf3] font-mono text-[11px]">
+                R$ {petr ? petr.price.toFixed(2) : "47,99"}
+              </span>
+              <span
+                className={`font-mono text-[11px] font-semibold ${
+                  (petr?.changePercent ?? 0) >= 0 ? "text-[#00c853]" : "text-[#ff5252]"
+                }`}
+              >
+                {(petr?.changePercent ?? 0) >= 0 ? "+" : ""}
+                {(petr?.changePercent ?? 0).toFixed(2)}%
+              </span>
             </div>
           </div>
         </div>

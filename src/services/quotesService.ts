@@ -43,7 +43,7 @@ export interface AssetRegistryItem {
 
 export const ASSET_REGISTRY: Record<string, AssetRegistryItem> = {
   // América Latina (B3 & Latam)
-  ibovespa: { ticker: "IBOV", name: "Ibovespa Brasil", symbol: "^BVSP", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 136420.5 },
+  ibovespa: { ticker: "IBOV", name: "Ibovespa Brasil", symbol: "^BVSP", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 183827.6 },
   petr4: { ticker: "PETR4", name: "Petrobras PN", symbol: "PETR4.SA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 47.99 },
   vale3: { ticker: "VALE3", name: "Vale ON", symbol: "VALE3.SA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 70.77 },
   itub4: { ticker: "ITUB4", name: "Itaú Unibanco PN", symbol: "ITUB4.SA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 42.13 },
@@ -60,8 +60,8 @@ export const ASSET_REGISTRY: Record<string, AssetRegistryItem> = {
   csna3: { ticker: "CSNA3", name: "Siderúrgica Nacional ON", symbol: "CSNA3.SA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 10.35 },
   crfb3: { ticker: "CRFB3", name: "Carrefour Brasil ON", symbol: "CRFB3.SA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 8.72 },
   "sp-latin-america": { ticker: "S&P LATAM", name: "S&P Latin America 40", symbol: "^MXX", category: "América Latina", currency: "USD", exchange: "S&P Dow Jones", type: "yf", basePrice: 2894.4 },
-  igovernanca: { ticker: "IGCX", name: "Índice de Governança Corporativa", symbol: "IGCX", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "fx", basePrice: 14210 },
-  "ibrx-brasil": { ticker: "IBRA", name: "Índice Brasil Amplo", symbol: "IBRA", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "fx", basePrice: 5240 },
+  igovernanca: { ticker: "IGCX", name: "Índice de Governança Corporativa", symbol: "^BVSP", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 14210 },
+  "ibrx-brasil": { ticker: "IBRA", name: "Índice Brasil Amplo", symbol: "^BVSP", category: "América Latina", currency: "BRL", exchange: "B3 (Brasil)", type: "yf", basePrice: 5240 },
 
   // EUA
   "sp-500": { ticker: "S&P 500", name: "S&P 500 Index", symbol: "^GSPC", category: "EUA", currency: "USD", exchange: "NYSE / NASDAQ", type: "yf", basePrice: 7743.41 },
@@ -285,15 +285,7 @@ class QuotesService {
       console.log(`[HGBrasil] Real-time market feed loaded. IBOVESPA: ${stocks?.IBOVESPA?.points || "N/A"} pts (${stocks?.IBOVESPA?.variation || 0}%)`);
 
       return {
-        ibovespa: stocks?.IBOVESPA
-          ? {
-              price:
-                Number(stocks.IBOVESPA.points) > 150000
-                  ? Number((Number(stocks.IBOVESPA.points) * 0.742).toFixed(1))
-                  : Number(stocks.IBOVESPA.points),
-              variation: Number(stocks.IBOVESPA.variation || 0),
-            }
-          : undefined,
+        ibovespa: stocks?.IBOVESPA ? { price: Number(stocks.IBOVESPA.points), variation: Number(stocks.IBOVESPA.variation || 0) } : undefined,
         nasdaq: stocks?.NASDAQ ? { price: Number(stocks.NASDAQ.points), variation: Number(stocks.NASDAQ.variation || 0) } : undefined,
         dowjones: stocks?.DOWJONES ? { price: Number(stocks.DOWJONES.points), variation: Number(stocks.DOWJONES.variation || 0) } : undefined,
         cac: stocks?.CAC ? { price: Number(stocks.CAC.points), variation: Number(stocks.CAC.variation || 0) } : undefined,
@@ -472,28 +464,15 @@ class QuotesService {
                 dataSource = "awesomeapi";
               }
               // Check HG Brasil for Ibovespa, Nasdaq, Dow Jones, CAC, Nikkei, Currencies
-              else if (id === "ibovespa") {
-                const varPct = hgData?.ibovespa?.variation !== undefined ? hgData.ibovespa.variation : 0.46;
-                const spotBase = hgData?.ibovespa?.price && hgData.ibovespa.price < 150000 ? hgData.ibovespa.price : 136420.5;
-                price = Number((spotBase * (1 + (varPct !== 0 ? (varPct * 0.05) / 100 : 0))).toFixed(1));
-                prevClose = spotBase / (1 + varPct / 100);
+              else if (id === "ibovespa" && hgData?.ibovespa?.price) {
+                price = hgData.ibovespa.price;
+                const varPct = hgData.ibovespa.variation;
+                prevClose = price / (1 + varPct / 100);
                 sparkline = [prevClose * 0.998, (prevClose + price) / 2, price];
                 high = Math.max(price, prevClose) * 1.008;
                 low = Math.min(price, prevClose) * 0.992;
                 volumeStr = "R$ 28,4 Bi";
                 dataSource = "hgbrasil";
-              } else if (id === "igovernanca") {
-                const varPct = hgData?.ibovespa?.variation !== undefined ? hgData.ibovespa.variation * 1.05 : 0.52;
-                price = Number((reg.basePrice * (1 + varPct / 100)).toFixed(1));
-                prevClose = reg.basePrice;
-                sparkline = [prevClose * 0.997, (prevClose + price) / 2, price];
-                dataSource = "b3-index";
-              } else if (id === "ibrx-brasil") {
-                const varPct = hgData?.ibovespa?.variation !== undefined ? hgData.ibovespa.variation * 0.98 : 0.48;
-                price = Number((reg.basePrice * (1 + varPct / 100)).toFixed(1));
-                prevClose = reg.basePrice;
-                sparkline = [prevClose * 0.997, (prevClose + price) / 2, price];
-                dataSource = "b3-index";
               } else if (id === "nasdaq" && hgData?.nasdaq?.price) {
                 price = hgData.nasdaq.price;
                 const varPct = hgData.nasdaq.variation;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
+import { ALL_ASSETS } from "../data/mockMarketData";
 import { Asset } from "../types/finance";
-import { formatAssetDisplayPrice } from "../utils/formatters";
 import { Search, X, TrendingUp, TrendingDown, ArrowRight, CornerDownLeft } from "lucide-react";
 
 interface GlobalSearchModalProps {
@@ -14,7 +14,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
   isOpen,
   onClose,
   onSelectAsset,
-  liveAssets = [],
+  liveAssets = ALL_ASSETS,
 }) => {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -44,7 +44,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
 
   if (!isOpen) return null;
 
-  const pool = liveAssets;
+  const pool = liveAssets && liveAssets.length > 0 ? liveAssets : ALL_ASSETS;
 
   const filteredAssets = query.trim()
     ? pool.filter(
@@ -57,39 +57,47 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-[#161b22] border border-[#30363d] rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
+      <div
+        className="bg-[#161b22] border border-[#30363d] rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
+        id="global-search-modal"
+      >
         {/* Search Input Bar */}
-        <div className="p-4 border-b border-[#21262d] flex items-center gap-3 bg-[#161b22]">
+        <div className="p-4 border-b border-[#30363d] flex items-center gap-3 bg-[#0e1117]/80">
           <Search className="w-5 h-5 text-[#58a6ff] shrink-0" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Pesquisar por código, empresa, moeda (ex: PETR4, IBOV, Dólar, BTC)..."
-            className="w-full bg-transparent text-sm sm:text-base text-[#e6edf3] placeholder-[#8b949e] focus:outline-none font-medium"
+            placeholder="Pesquise ações, ETFs, moedas e criptomoedas (ex: PETR4, S&P 500, BTC)..."
+            className="flex-1 bg-transparent text-sm sm:text-base text-[#e6edf3] placeholder-[#8b949e] focus:outline-none"
           />
           {query && (
             <button
               onClick={() => setQuery("")}
-              className="p-1 rounded-md text-[#8b949e] hover:text-[#e6edf3] cursor-pointer"
+              className="p-1 rounded text-[#8b949e] hover:text-white"
             >
               <X className="w-4 h-4" />
             </button>
           )}
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-xs bg-[#21262d] hover:bg-[#30363d] text-[#8b949e] hover:text-[#e6edf3] border border-[#30363d] cursor-pointer"
+            className="px-2 py-1 text-xs font-mono bg-[#21262d] text-[#8b949e] hover:text-white rounded border border-[#30363d]"
           >
             ESC
           </button>
         </div>
 
         {/* Results List */}
-        <div className="max-h-[60vh] overflow-y-auto divide-y divide-[#21262d]">
+        <div className="flex-1 overflow-y-auto p-3 divide-y divide-[#21262d]">
+          <div className="px-2 py-1.5 text-[11px] font-semibold text-[#8b949e] uppercase tracking-wider flex items-center justify-between">
+            <span>{query ? "Resultados Encontrados" : "Sugestões Populares do Mercado"}</span>
+            <span>{filteredAssets.length} ativos</span>
+          </div>
+
           {filteredAssets.length === 0 ? (
-            <div className="p-8 text-center text-[#8b949e] text-sm">
-              Nenhum ativo financeiro encontrado para <span className="text-[#e6edf3] font-semibold">"{query}"</span>.
+            <div className="py-12 text-center text-xs text-[#8b949e]">
+              Nenhum ativo encontrado para &ldquo;{query}&rdquo;.
             </div>
           ) : (
             filteredAssets.map((asset) => {
@@ -101,31 +109,30 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                     onSelectAsset(asset);
                     onClose();
                   }}
-                  className="p-3.5 sm:p-4 hover:bg-[#21262d]/80 cursor-pointer flex items-center justify-between transition-colors group"
+                  className="p-3 hover:bg-[#21262d] rounded-xl cursor-pointer flex items-center justify-between transition-colors group"
                 >
-                  <div className="flex items-center gap-3 min-w-0 pr-4">
-                    <div className="w-9 h-9 rounded-xl bg-[#0e1117] border border-[#30363d] flex items-center justify-center font-mono font-bold text-xs text-[#58a6ff] shrink-0 group-hover:border-[#58a6ff]">
-                      {asset.ticker.slice(0, 4)}
+                  <div className="flex items-center gap-3 min-w-0 pr-2">
+                    <div className="w-9 h-9 rounded-xl bg-[#0e1117] border border-[#30363d] flex items-center justify-center font-mono font-bold text-xs text-[#58a6ff] group-hover:border-[#58a6ff] transition-colors shrink-0">
+                      {asset.ticker.slice(0, 3)}
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs sm:text-sm font-bold text-[#e6edf3] group-hover:text-[#58a6ff] transition-colors">
+                        <span className="font-mono font-bold text-sm text-[#e6edf3] group-hover:text-[#58a6ff] transition-colors">
                           {asset.ticker}
                         </span>
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#0e1117] text-[#8b949e] border border-[#30363d] shrink-0 font-medium">
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#0e1117] text-[#8b949e] border border-[#30363d]">
                           {asset.category}
                         </span>
                       </div>
-                      <p className="text-xs text-[#8b949e] truncate mt-0.5" title={asset.name}>
-                        {asset.name}
-                      </p>
+                      <p className="text-xs text-[#8b949e] truncate">{asset.name}</p>
                     </div>
                   </div>
 
                   <div className="text-right shrink-0 flex items-center gap-4">
                     <div>
                       <div className="text-xs sm:text-sm font-mono font-bold text-[#e6edf3]">
-                        {formatAssetDisplayPrice(asset.price, asset.currency, asset.id, asset.ticker, asset.name)}
+                        {asset.currency}{" "}
+                        {asset.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                       </div>
                       <div
                         className={`text-xs font-mono font-semibold flex items-center justify-end gap-0.5 ${
@@ -133,9 +140,9 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                         }`}
                       >
                         {isPositive ? (
-                          <TrendingUp className="w-3 h-3 shrink-0" />
+                          <TrendingUp className="w-3 h-3" />
                         ) : (
-                          <TrendingDown className="w-3 h-3 shrink-0" />
+                          <TrendingDown className="w-3 h-3" />
                         )}
                         <span>
                           {isPositive ? "+" : ""}
@@ -143,10 +150,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                         </span>
                       </div>
                     </div>
-
-                    <div className="p-1 rounded-lg text-[#8b949e] group-hover:text-[#58a6ff] group-hover:translate-x-0.5 transition-all">
-                      <ArrowRight className="w-4 h-4" />
-                    </div>
+                    <ArrowRight className="w-4 h-4 text-[#8b949e] group-hover:text-[#58a6ff] group-hover:translate-x-0.5 transition-all hidden sm:block" />
                   </div>
                 </div>
               );
@@ -154,15 +158,20 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
           )}
         </div>
 
-        {/* Footer info in Modal */}
-        <div className="p-3 bg-[#0e1117] border-t border-[#21262d] flex items-center justify-between text-[11px] text-[#8b949e]">
-          <span>
-            Pressione <kbd className="px-1.5 py-0.5 bg-[#161b22] border border-[#30363d] rounded text-[#e6edf3]">Enter</kbd> para selecionar
-          </span>
-          <span className="flex items-center gap-1 font-mono text-[#00c853]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#00c853] animate-pulse"></span>
-            Cotações em Tempo Real
-          </span>
+        {/* Modal Bottom Keyboard Helper */}
+        <div className="p-3 border-t border-[#30363d] bg-[#0e1117]/90 text-[11px] text-[#8b949e] flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1">
+              <kbd className="px-1.5 py-0.5 bg-[#161b22] border border-[#30363d] rounded">↑</kbd>
+              <kbd className="px-1.5 py-0.5 bg-[#161b22] border border-[#30363d] rounded">↓</kbd>
+              <span>Navegar</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <CornerDownLeft className="w-3 h-3" />
+              <span>Selecionar</span>
+            </span>
+          </div>
+          <span>DinhEuro Inteligência Financeira</span>
         </div>
       </div>
     </div>
