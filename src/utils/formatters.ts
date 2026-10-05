@@ -79,6 +79,52 @@ export function formatCurrency(
 }
 
 /**
+ * Formata o preço de exibição de um ativo financeiro com base na sua moeda
+ */
+export function formatAssetDisplayPrice(price: number, currency: string = "BRL"): string {
+  if (isNaN(price) || price === null || price === undefined) return "0,00";
+
+  const curr = (currency || "BRL").toUpperCase();
+  if (curr === "BRL") {
+    return price >= 1000
+      ? `R$ ${price.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : `R$ ${price.toFixed(2)}`;
+  }
+  if (curr === "USD") {
+    return price >= 1000
+      ? `US$ ${price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : `US$ ${price.toFixed(2)}`;
+  }
+  if (curr === "EUR") {
+    return `€ ${price.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  if (curr === "GBP") {
+    return `£ ${price.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  if (curr === "JPY") {
+    return `¥ ${price.toLocaleString("ja-JP", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`;
+  }
+  if (curr === "INR") {
+    return `₹ ${price.toLocaleString("en-IN", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`;
+  }
+  if (curr === "BTC") {
+    return `₿ ${price.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 6 })}`;
+  }
+  if (curr === "ETH") {
+    return `Ξ ${price.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`;
+  }
+  if (curr === "SOL") {
+    return `◎ ${price.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
+  return formatCurrency(price, curr);
+}
+
+// Aliases para compatibilidade
+export const formatPrice = formatAssetDisplayPrice;
+export const formatAssetPrice = formatAssetDisplayPrice;
+
+/**
  * Formata percentuais com sinal positivo explícito (+0.00%)
  */
 export function formatPercent(value: number, includeSign: boolean = true): string {

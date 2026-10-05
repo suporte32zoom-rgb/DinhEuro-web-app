@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Asset, NewsItem } from "../types/finance";
 import { InteractiveChart } from "./InteractiveChart";
 import { Sparkline } from "./Sparkline";
+import { ALL_ASSETS, PORTAL_NEWS } from "../data/mockMarketData";
 import {
   ArrowLeft,
   Bookmark,
@@ -21,8 +22,7 @@ import {
   Briefcase,
   Share2,
 } from "lucide-react";
-
-import { formatAssetDisplayPrice, formatForexRate, formatPoints } from "../utils/formatters";
+import { formatAssetDisplayPrice } from "../utils/formatters";
 
 interface AssetDetailViewProps {
   asset: Asset;
@@ -41,7 +41,7 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
   isWatchlisted,
   onToggleWatchlist,
   onOpenPortfolio,
-  allAssets = [],
+  allAssets = ALL_ASSETS,
 }) => {
   const [aiAnalysis, setAiAnalysis] = useState<{
     summary?: string;
@@ -101,14 +101,13 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
   const isPositive = asset.changePercent >= 0;
 
   // Related assets mapping
-  const currentPool = allAssets || [];
+  const currentPool = allAssets && allAssets.length > 0 ? allAssets : ALL_ASSETS;
   const relatedAssets = currentPool.filter((a) =>
     asset.relatedAssetIds?.includes(a.id)
   );
 
-  const formatPrice = (price: number, currency: string) => {
-    return formatAssetDisplayPrice(price, currency, asset.id, asset.ticker, asset.name);
-  };
+  const formatPrice = (price: number, currency: string) =>
+    formatAssetDisplayPrice(price, currency);
 
   const handleShare = () => {
     if (navigator.clipboard) {
