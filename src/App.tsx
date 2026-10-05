@@ -29,7 +29,9 @@ import { AIDeepDiveModal } from "./components/AIDeepDiveModal";
 import { PWAInstallModal } from "./components/PWAInstallModal";
 import { PWANotificationBar } from "./components/PWANotificationBar";
 import { PWASplashIntro } from "./components/PWASplashIntro";
+import { DinhEuroAICopilot } from "./components/DinhEuroAICopilot";
 import { Footer } from "./components/Footer";
+import { Sparkles } from "lucide-react";
 import { usePWA } from "./hooks/usePWA";
 
 export default function App() {
@@ -63,6 +65,7 @@ export default function App() {
   const [portfolioOpen, setPortfolioOpen] = useState(false);
   const [watchlistOpen, setWatchlistOpen] = useState(false);
   const [pwaModalOpen, setPwaModalOpen] = useState(false);
+  const [copilotOpen, setCopilotOpen] = useState(false);
   const [deepDiveTopic, setDeepDiveTopic] = useState<AIAccordionTopic | null>(null);
 
   // Helper to merge live quotes into asset objects
@@ -326,6 +329,7 @@ export default function App() {
         onOpenSidebar={() => setSidebarOpen(true)}
         onOpenPortfolio={() => setPortfolioOpen(true)}
         onOpenWatchlist={() => setWatchlistOpen(true)}
+        onOpenCopilot={() => setCopilotOpen(true)}
         onOpenPwaModal={() => setPwaModalOpen(true)}
         isPwaInstallable={isInstallable}
         isPwaInstalled={isInstalled}
@@ -402,6 +406,7 @@ export default function App() {
         }}
         onOpenPortfolio={() => setPortfolioOpen(true)}
         onOpenWatchlist={() => setWatchlistOpen(true)}
+        onOpenCopilot={() => setCopilotOpen(true)}
         onOpenPwaModal={() => setPwaModalOpen(true)}
         isPwaInstalled={isInstalled}
         watchlistAssets={watchlistAssets}
@@ -438,6 +443,24 @@ export default function App() {
         topic={deepDiveTopic}
         onClose={() => setDeepDiveTopic(null)}
       />
+
+      {/* DinhEuro Official AI Copilot Modal */}
+      <DinhEuroAICopilot
+        isOpen={copilotOpen}
+        onClose={() => setCopilotOpen(false)}
+      />
+
+      {/* Floating Action Button for DinhEuro AI */}
+      <button
+        id="floating-ai-copilot-btn"
+        onClick={() => setCopilotOpen(true)}
+        className="fixed bottom-5 right-5 z-40 flex items-center gap-2 px-4 py-3 rounded-full bg-gradient-to-r from-[#1f6feb] via-[#8957e5] to-[#f0883e] text-white font-semibold text-xs sm:text-sm shadow-xl shadow-black/50 hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/20 group"
+        title="Abrir IA Especialista DinhEuro"
+      >
+        <Sparkles className="w-4 h-4 text-amber-300 animate-spin-slow group-hover:rotate-45 transition-transform" />
+        <span>IA DinhEuro</span>
+        <span className="w-2 h-2 rounded-full bg-[#00c853] animate-pulse"></span>
+      </button>
 
       <PWAInstallModal
         isOpen={pwaModalOpen}

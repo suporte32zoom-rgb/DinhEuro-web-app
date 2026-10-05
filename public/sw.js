@@ -1,8 +1,9 @@
-// DinhEuro Finanças - Progressive Web App Service Worker
-const CACHE_NAME = "dinheuro-v4";
+// DinhEuro Finanças - Progressive Web App Service Worker (Production Hostinger Ready)
+const CACHE_NAME = "dinheuro-v5";
+const API_CACHE_NAME = "dinheuro-api-cache-v5";
 const OFFLINE_URL = "/";
 
-// Only precache core shell static assets (never APIs or financial quotes)
+// Only precache core shell static assets (never APIs or dynamic financial quotes)
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -29,7 +30,7 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// 2. Activate Event: Clean up all old caches and claim clients immediately
+// 2. Activate Event: Clean up all old caches immediately
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
@@ -37,8 +38,8 @@ self.addEventListener("activate", (event) => {
       .then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cache) => {
-            if (cache !== CACHE_NAME) {
-              console.log("[SW] Deleting old cache version:", cache);
+            if (cache !== CACHE_NAME && cache !== API_CACHE_NAME) {
+              console.log("[SW] Deleting obsolete cache version:", cache);
               return caches.delete(cache);
             }
           })
@@ -49,7 +50,7 @@ self.addEventListener("activate", (event) => {
 });
 
 // 3. Fetch Event Strategy:
-// - API calls (/api/*): STRICT Network First with no-store bypass (NEVER cached in static cache)
+// - API calls (/api/*): Strict NETWORK FIRST (Always fetch live rates, falling back to cache only when offline)
 // - Static assets & navigation: Stale-While-Revalidate with offline fallback
 self.addEventListener("fetch", (event) => {
   const request = event.request;
@@ -60,27 +61,40 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // A. Handle API Requests: STRICT NETWORK FIRST (Never store quotes in static cache)
+  // A. Handle API Requests: NETWORK FIRST, falling back to Cache
   if (url.pathname.startsWith("/api/")) {
     event.respondWith(
       fetch(request, { cache: "no-store" })
         .then((networkResponse) => {
-          // Deliver live real-time network response directly without static caching
+          if (networkResponse && networkResponse.status === 200) {
+            // Save fresh copy in API cache for offline emergency use only
+            const responseClone = networkResponse.clone();
+            caches.open(API_CACHE_NAME).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
           return networkResponse;
         })
         .catch(() => {
-          // Network failed (offline)
-          return new Response(
-            JSON.stringify({
-              offline: true,
-              message: "Modo offline ativo. Conecte-se à internet para atualizar as cotações em tempo real.",
-              timestamp: new Date().toISOString(),
-            }),
-            {
-              headers: { "Content-Type": "application/json" },
-              status: 200,
+          // Network failed (offline or network disruption) -> fallback to cached API response
+          return caches.match(request).then((cachedResponse) => {
+            if (cachedResponse) {
+              return cachedResponse;
             }
-          );
+            // If no cache, return offline JSON response
+            return new Response(
+              JSON.stringify({
+                success: false,
+                offline: true,
+                message: "Modo offline ativo. Conecte-se à internet para atualizar as cotações em tempo real.",
+                timestamp: new Date().toISOString(),
+              }),
+              {
+                headers: { "Content-Type": "application/json" },
+                status: 200,
+              }
+            );
+          });
         })
     );
     return;
@@ -112,9 +126,12 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-// 4. Message Handler for instant updates
+// 4. Message Handler for instant updates & cache purging
 self.addEventListener("message", (event) => {
-  if (event.data && event.data.type === "SKIP_WAITING") {
+  if (event.data && (event.data.type === "SKIP_WAITING" || event.data.type === "CLEAR_CACHE")) {
+    caches.keys().then((names) => {
+      names.forEach((name) => caches.delete(name));
+    });
     self.skipWaiting();
   }
 });

@@ -13,9 +13,10 @@ interface MarketMoversGridProps {
 }
 
 export const MarketMoversGrid: React.FC<MarketMoversGridProps> = ({ onSelectTicker, liveMovers }) => {
-  const activeItems = liveMovers?.mostActive?.length ? liveMovers.mostActive : TOP_MOVERS_DATA.mostActive;
-  const gainersItems = liveMovers?.topGainers?.length ? liveMovers.topGainers : TOP_MOVERS_DATA.topGainers;
-  const losersItems = liveMovers?.topLosers?.length ? liveMovers.topLosers : TOP_MOVERS_DATA.topLosers;
+  const isLoading = !liveMovers;
+  const activeItems = liveMovers?.mostActive || [];
+  const gainersItems = liveMovers?.topGainers || [];
+  const losersItems = liveMovers?.topLosers || [];
 
   const renderColumn = (
     title: string,
@@ -51,9 +52,23 @@ export const MarketMoversGrid: React.FC<MarketMoversGridProps> = ({ onSelectTick
             </span>
           </div>
 
-          {/* List of items */}
+          {/* List of items or Skeleton Loading */}
           <div className="divide-y divide-[#21262d]/70">
-            {items.map((item) => {
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="py-3 px-2 flex items-center justify-between animate-pulse">
+                  <div className="space-y-1.5">
+                    <div className="h-3.5 w-14 bg-[#21262d] rounded" />
+                    <div className="h-2.5 w-24 bg-[#21262d] rounded" />
+                  </div>
+                  <div className="space-y-1.5 text-right flex flex-col items-end">
+                    <div className="h-3.5 w-16 bg-[#21262d] rounded" />
+                    <div className="h-2.5 w-12 bg-[#21262d] rounded" />
+                  </div>
+                </div>
+              ))
+            ) : (
+              items.map((item) => {
               const isPositive = item.changePercent >= 0;
               return (
                 <div
@@ -94,7 +109,7 @@ export const MarketMoversGrid: React.FC<MarketMoversGridProps> = ({ onSelectTick
                   </div>
                 </div>
               );
-            })}
+            }))}
           </div>
         </div>
 

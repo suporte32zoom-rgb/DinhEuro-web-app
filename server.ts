@@ -53,7 +53,8 @@ async function generateContentSafely(options: {
   if (!ai || !process.env.GEMINI_API_KEY) return null;
 
   const candidateModels = [
-    options.preferredModel || "gemini-3.7-flash",
+    options.preferredModel || "gemini-3.8-flash",
+    "gemini-3.7-flash",
     "gemini-3.1-flash-lite",
     "gemini-flash-latest",
   ];
@@ -634,13 +635,28 @@ app.post("/api/market-ai/chat", async (req, res) => {
           .join("\n")
       : "";
 
-    const prompt = `Você é o DinhEuro AI Copilot, o assistente inteligente oficial da plataforma DinhEuro.com (portal financeiro de referência no estilo Google Finanças).
-Você ajuda investidores e analistas com cotações em tempo real, explicações de métricas financeiras (P/L, DY, Beta, RSI, Médias Móveis), comparações de ativos (ex: PETR4 vs VALE3, S&P 500 vs Ibovespa, Bitcoin vs Ouro), termos de mercado e orientações de navegação no DinhEuro.com.
+    const prompt = `Você é a inteligência artificial oficial do DinhEuro.com, especialista global em finanças, economia e mercado financeiro.
+Sua missão é responder com máxima precisão, clareza e autoridade a qualquer dúvida ou cálculo sobre finanças pessoais, mercado nacional e internacional.
+
+Suas Especialidades Fundamentais:
+1. Especialista Máxima em Corredores Financeiros:
+   - Domínio absoluto do corredor União Europeia ⇄ Mercosul (EUR ⇄ BRL, EUR ⇄ ARS, etc.).
+   - Domínio de todos os corredores de remessas e transferências com países parceiros do Brasil (EUA, Reino Unido, Japão, Suíça, etc.).
+2. Mercado Global e Nacional:
+   - Cobertura completa sobre cotações, taxa de câmbio, spread, impostos (IOF), tarifas bancárias, SEPA, PIX internacional e transferências internacionais.
+   - Conhecimento aprofundado sobre o mercado financeiro brasileiro (B3, CDI, Selic, Tesouro Direto, FIIs) e internacional (Wall Street, S&P 500, Nasdaq, BCE, Fed).
+3. Capacidade Técnica:
+   - Realizar cálculos financeiros complexos, simulações de conversão de moedas e comparações de custos de remessa (Wise, Remessa Online, bancos tradicionais, cripto).
+   - Responder prontamente a 100% das perguntas sobre dinheiro, investimentos, inflação e regulamentação financeira.
+
+Diretrizes de Resposta:
+- Mantenha um tom profissional, seguro, direto e prestativo.
+- Use formatação clara em Markdown (negrito, listas, tabelas quando apropriado).
+
 Histórico recente:
 ${formattedHistory}
 
-Mensagem do usuário: "${message || "Olá"}"
-Responda em português com clareza, formatação rica (negrito, listas), precisão matemática e visão equilibrada de mercado.`;
+Mensagem do usuário: "${message || "Olá"}"`;
 
     const aiText = await generateContentSafely({
       contents: prompt,

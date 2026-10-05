@@ -20,6 +20,7 @@ interface HeaderProps {
   onOpenSidebar: () => void;
   onOpenPortfolio: () => void;
   onOpenWatchlist: () => void;
+  onOpenCopilot?: () => void;
   onOpenPwaModal?: () => void;
   isPwaInstallable?: boolean;
   isPwaInstalled?: boolean;
@@ -39,6 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSidebar,
   onOpenPortfolio,
   onOpenWatchlist,
+  onOpenCopilot,
   onOpenPwaModal,
   isPwaInstallable = false,
   isPwaInstalled = false,
@@ -266,6 +268,19 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Right: Quick Actions */}
         <div className="flex items-center gap-2">
+          {/* DinhEuro AI Copilot Button */}
+          {onOpenCopilot && (
+            <button
+              id="btn-header-copilot"
+              onClick={onOpenCopilot}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-[#8957e5] to-[#1f6feb] hover:brightness-110 border border-purple-500/30 shadow-sm transition-all cursor-pointer"
+              title="Perguntar à IA Oficial DinhEuro (Mercados, Corredores e Câmbio)"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#f0883e]" />
+              <span className="hidden sm:inline">IA DinhEuro</span>
+            </button>
+          )}
+
           {/* Watchlist Quick Button */}
           <button
             id="btn-header-watchlist"

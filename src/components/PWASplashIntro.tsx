@@ -41,7 +41,7 @@ export const PWASplashIntro: React.FC = () => {
 
       {/* Main Center Splash Content */}
       <div className="relative flex flex-col items-center text-center space-y-4 px-6 animate-in zoom-in-95 duration-300">
-        <div className="p-4 rounded-3xl bg-gradient-to-b from-[#161b22] to-[#0e1117] border border-[#30363d] shadow-2xl shadow-emerald-950/60 ring-1 ring-white/10">
+        <div className="p-4 rounded-full bg-gradient-to-b from-[#21262d] to-[#161b22] border-2 border-white/20 shadow-[0_0_50px_rgba(56,189,248,0.25)] ring-4 ring-white/10">
           <BrandLogo size="xl" showText={false} animate={false} />
         </div>
 

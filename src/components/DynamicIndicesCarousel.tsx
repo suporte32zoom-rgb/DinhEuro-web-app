@@ -87,7 +87,28 @@ export const DynamicIndicesCarousel: React.FC<DynamicIndicesCarouselProps> = ({
           ref={scrollRef}
           className="flex items-stretch gap-3 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory"
         >
-          {filteredAssets.map((asset) => {
+          {filteredAssets.length === 0 ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={`skeleton-${i}`}
+                className="snap-start shrink-0 w-[240px] sm:w-[260px] bg-[#161b22] border border-[#30363d]/80 rounded-xl p-3.5 flex flex-col justify-between h-[140px] animate-pulse shadow-md shadow-black/20"
+              >
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 w-16 bg-[#21262d] rounded" />
+                    <div className="h-3 w-12 bg-[#21262d] rounded" />
+                  </div>
+                  <div className="h-3 w-28 bg-[#21262d] rounded" />
+                </div>
+                <div className="flex justify-between items-end my-2">
+                  <div className="h-6 w-24 bg-[#21262d] rounded" />
+                  <div className="h-8 w-20 bg-[#21262d] rounded" />
+                </div>
+                <div className="h-4 w-20 bg-[#21262d] rounded pt-2 border-t border-[#30363d]/40" />
+              </div>
+            ))
+          ) : (
+            filteredAssets.map((asset) => {
             const isPositive = asset.changePercent >= 0;
             return (
               <div
@@ -152,7 +173,7 @@ export const DynamicIndicesCarousel: React.FC<DynamicIndicesCarouselProps> = ({
                 </div>
               </div>
             );
-          })}
+          }))}
         </div>
       </div>
     </div>
