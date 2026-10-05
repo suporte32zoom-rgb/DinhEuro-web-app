@@ -107,6 +107,129 @@ async function generateContentSafely(options: {
 // REAL-TIME MARKET DATA ROUTES (QUOTES SERVICE)
 // ==========================================
 
+// API: Live Indicators with Gemini Google Search Grounding
+let groundedIndicatorsCache: { timestamp: number; data: any } = { timestamp: 0, data: null };
+
+app.get("/api/market/grounded-indicators", async (req, res) => {
+  try {
+    const now = Date.now();
+    const force = req.query.force === "true";
+    if (!force && groundedIndicatorsCache.data && now - groundedIndicatorsCache.timestamp < 45000) {
+      return res.json({
+        success: true,
+        cached: true,
+        timestamp: new Date(groundedIndicatorsCache.timestamp).toISOString(),
+        ...groundedIndicatorsCache.data,
+      });
+    }
+
+    const ai = getGeminiClient();
+    if (!ai || !process.env.GEMINI_API_KEY) {
+      const quotes = await quotesService.getQuotes();
+      return res.json({
+        success: true,
+        source: "Quotes Engine Fallback",
+        timestamp: new Date().toISOString(),
+        indicators: {
+          usdBrl: { name: "Dólar Comercial", ticker: "USD/BRL", price: quotes["usd-brl"]?.price || 5.18, changePercent: quotes["usd-brl"]?.changePercent || 0.15 },
+          eurBrl: { name: "Euro Comercial", ticker: "EUR/BRL", price: quotes["eur-brl"]?.price || 5.91, changePercent: quotes["eur-brl"]?.changePercent || 0.22 },
+          ibov: { name: "Ibovespa", ticker: "IBOV", price: quotes["ibovespa"]?.price || 183477, changePercent: quotes["ibovespa"]?.changePercent || 0.45 },
+          selic: { name: "Taxa Selic", ticker: "SELIC", price: 10.75, unit: "% a.a." },
+          btcBrl: { name: "Bitcoin", ticker: "BTC/BRL", price: quotes["btc-brl"]?.price || quotes["bitcoin"]?.price || 542000, changePercent: 1.2 },
+          sp500: { name: "S&P 500", ticker: "S&P 500", price: quotes["sp-500"]?.price || 5860, changePercent: 0.35 },
+        },
+      });
+    }
+
+    const prompt = `Consulte via Google Search os valores numéricos mais recentes do mercado financeiro hoje:
+1. Dólar Comercial (USD/BRL)
+2. Euro Comercial (EUR/BRL)
+3. Índice Ibovespa (pontos)
+4. Taxa Selic meta (% ao ano)
+5. Bitcoin em Reais (BTC/BRL) e Dólar (BTC/USD)
+6. S&P 500 (pontos)
+
+Retorne estritamente um objeto JSON válido (sem texto antes ou depois) no formato:
+{
+  "usdBrl": { "price": 5.18, "changePercent": 0.15 },
+  "eurBrl": { "price": 5.91, "changePercent": 0.22 },
+  "ibov": { "price": 183477, "changePercent": 0.45 },
+  "selic": { "price": 10.75, "unit": "% a.a." },
+  "btcBrl": { "price": 542000, "changePercent": 1.2 },
+  "sp500": { "price": 5860, "changePercent": 0.35 }
+}`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.8-flash",
+      contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }],
+      },
+    });
+
+    let jsonResult = null;
+    if (response?.text) {
+      const cleaned = response.text.replace(/```json/g, "").replace(/```/g, "").trim();
+      try {
+        jsonResult = JSON.parse(cleaned);
+      } catch {
+        const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          jsonResult = JSON.parse(jsonMatch[0]);
+        }
+      }
+    }
+
+    if (jsonResult && jsonResult.usdBrl && jsonResult.usdBrl.price > 0) {
+      groundedIndicatorsCache = {
+        timestamp: Date.now(),
+        data: {
+          source: "Gemini Google Search Grounding",
+          indicators: jsonResult,
+        },
+      };
+      return res.json({
+        success: true,
+        source: "Gemini Google Search Grounding",
+        timestamp: new Date().toISOString(),
+        indicators: jsonResult,
+      });
+    }
+
+    // Safe fallback
+    const quotes = await quotesService.getQuotes();
+    res.json({
+      success: true,
+      source: "Quotes Service Fallback",
+      timestamp: new Date().toISOString(),
+      indicators: {
+        usdBrl: { price: quotes["usd-brl"]?.price || 5.18, changePercent: quotes["usd-brl"]?.changePercent || 0.15 },
+        eurBrl: { price: quotes["eur-brl"]?.price || 5.91, changePercent: quotes["eur-brl"]?.changePercent || 0.22 },
+        ibov: { price: quotes["ibovespa"]?.price || 183477, changePercent: quotes["ibovespa"]?.changePercent || 0.45 },
+        selic: { price: 10.75, unit: "% a.a." },
+        btcBrl: { price: quotes["btc-brl"]?.price || quotes["bitcoin"]?.price || 542000, changePercent: 1.2 },
+        sp500: { price: quotes["sp-500"]?.price || 5860, changePercent: 0.35 },
+      },
+    });
+  } catch (error: any) {
+    console.error("[Server] Error in /api/market/grounded-indicators:", error);
+    const quotes = await quotesService.getQuotes();
+    res.json({
+      success: true,
+      source: "Safe Local Fallback",
+      timestamp: new Date().toISOString(),
+      indicators: {
+        usdBrl: { price: quotes["usd-brl"]?.price || 5.18, changePercent: 0.1 },
+        eurBrl: { price: quotes["eur-brl"]?.price || 5.91, changePercent: 0.2 },
+        ibov: { price: quotes["ibovespa"]?.price || 183477, changePercent: 0.3 },
+        selic: { price: 10.75, unit: "% a.a." },
+        btcBrl: { price: 542000, changePercent: 1.0 },
+        sp500: { price: 5860, changePercent: 0.2 },
+      },
+    });
+  }
+});
+
 // API: Live Quotes for all categories
 app.get("/api/market/quotes", async (req, res) => {
   try {

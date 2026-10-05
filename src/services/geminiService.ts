@@ -28,6 +28,40 @@ export interface AssetAIAnalysisResponse {
   technicalInsight: string;
 }
 
+export interface GroundedMarketIndicatorsResponse {
+  success: boolean;
+  source: string;
+  timestamp: string;
+  indicators: {
+    usdBrl?: { price: number; changePercent?: number; name?: string; ticker?: string };
+    eurBrl?: { price: number; changePercent?: number; name?: string; ticker?: string };
+    ibov?: { price: number; changePercent?: number; name?: string; ticker?: string };
+    selic?: { price: number; unit?: string; name?: string; ticker?: string };
+    btcBrl?: { price: number; changePercent?: number; name?: string; ticker?: string };
+    sp500?: { price: number; changePercent?: number; name?: string; ticker?: string };
+  };
+}
+
+/**
+ * Consulta indicadores de mercado em tempo real via Gemini com Google Search Grounding
+ */
+export async function fetchGroundedMarketIndicators(forceRefresh: boolean = false): Promise<GroundedMarketIndicatorsResponse | null> {
+  try {
+    const url = `/api/market/grounded-indicators${forceRefresh ? "?force=true" : ""}`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: { "Cache-Control": "no-cache" },
+    });
+
+    if (!response.ok) throw new Error("Falha ao obter indicadores grounded");
+
+    return await response.json();
+  } catch (error) {
+    console.warn("[GeminiService] Erro ao consultar indicadores via Search Grounding:", error);
+    return null;
+  }
+}
+
 /**
  * Envia uma mensagem para o assistente de inteligência artificial DinhEuro Copilot
  * especializado em mercados financeiros, câmbio, impostos (IOF) e corredores de remessas.

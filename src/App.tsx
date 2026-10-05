@@ -372,6 +372,7 @@ export default function App() {
               assets={liveAssets}
               activeTab={activeTab}
               onSelectAsset={handleSelectAsset}
+              isLoading={isRefreshing && liveAssets.length === 0}
             />
 
             {/* AI Market Summary Accordion */}

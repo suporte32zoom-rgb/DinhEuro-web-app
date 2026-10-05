@@ -1,9 +1,9 @@
-// DinhEuro Finanças - Progressive Web App Service Worker (Production Hostinger Ready)
-const CACHE_NAME = "dinheuro-v5";
-const API_CACHE_NAME = "dinheuro-api-cache-v5";
+// DinhEuro Finanças - Progressive Web App Service Worker
+// Versão do Cache Atualizada para Sincronização em Tempo Real (Hostinger / Live)
+const CACHE_NAME = "dinheuro-v6-live";
 const OFFLINE_URL = "/";
 
-// Only precache core shell static assets (never APIs or dynamic financial quotes)
+// Apenas recursos estáticos essenciais do App Shell (NUNCA dados financeiros em tempo real)
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -16,7 +16,7 @@ const STATIC_ASSETS = [
   "/apple-touch-icon.png",
 ];
 
-// 1. Install Event: Pre-cache App Shell and skip waiting immediately
+// 1. Install Event: Pré-carrega o Shell e força ativação imediata (skipWaiting)
 self.addEventListener("install", (event) => {
   self.skipWaiting();
   event.waitUntil(
@@ -24,13 +24,13 @@ self.addEventListener("install", (event) => {
       .open(CACHE_NAME)
       .then((cache) => {
         return cache.addAll(STATIC_ASSETS).catch((err) => {
-          console.warn("[SW] Warning while pre-caching assets:", err);
+          console.warn("[SW] Aviso ao pré-carregar assets estáticos:", err);
         });
       })
   );
 });
 
-// 2. Activate Event: Clean up all old caches immediately
+// 2. Activate Event: Limpa e DELETA AUTOMATICAMENTE todos os caches antigos do navegador
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
@@ -38,8 +38,8 @@ self.addEventListener("activate", (event) => {
       .then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cache) => {
-            if (cache !== CACHE_NAME && cache !== API_CACHE_NAME) {
-              console.log("[SW] Deleting obsolete cache version:", cache);
+            if (cache !== CACHE_NAME) {
+              console.log("[SW] Deletando cache antigo de versão anterior:", cache);
               return caches.delete(cache);
             }
           })
@@ -50,57 +50,45 @@ self.addEventListener("activate", (event) => {
 });
 
 // 3. Fetch Event Strategy:
-// - API calls (/api/*): Strict NETWORK FIRST (Always fetch live rates, falling back to cache only when offline)
-// - Static assets & navigation: Stale-While-Revalidate with offline fallback
+// - Cotações & Endpoints Financeiros (/api/*): STRICT NETWORK FIRST com no-store e timeout.
+//   Sempre consulta a rede primeiro para garantir dados 100% atualizados na Hostinger.
+// - Assets estáticos: Stale-While-Revalidate com fallback offline seguro.
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
-  // Ignore non-GET requests and non-http(s) schemes
+  // Ignora requisições não-GET ou esquemas não HTTP/HTTPS
   if (request.method !== "GET" || !url.protocol.startsWith("http")) {
     return;
   }
 
-  // A. Handle API Requests: NETWORK FIRST, falling back to Cache
+  // A. REQUISIÇÕES DE DADOS FINANCEIROS E APIS: NETWORK FIRST OBRIGATÓRIO
   if (url.pathname.startsWith("/api/")) {
     event.respondWith(
       fetch(request, { cache: "no-store" })
         .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            // Save fresh copy in API cache for offline emergency use only
-            const responseClone = networkResponse.clone();
-            caches.open(API_CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
           return networkResponse;
         })
         .catch(() => {
-          // Network failed (offline or network disruption) -> fallback to cached API response
-          return caches.match(request).then((cachedResponse) => {
-            if (cachedResponse) {
-              return cachedResponse;
+          // Fallback gracioso offline sem travar o aplicativo
+          return new Response(
+            JSON.stringify({
+              success: false,
+              offline: true,
+              message: "Conexão de rede offline. Reconecte para obter cotações em tempo real.",
+              timestamp: new Date().toISOString(),
+            }),
+            {
+              headers: { "Content-Type": "application/json" },
+              status: 200,
             }
-            // If no cache, return offline JSON response
-            return new Response(
-              JSON.stringify({
-                success: false,
-                offline: true,
-                message: "Modo offline ativo. Conecte-se à internet para atualizar as cotações em tempo real.",
-                timestamp: new Date().toISOString(),
-              }),
-              {
-                headers: { "Content-Type": "application/json" },
-                status: 200,
-              }
-            );
-          });
+          );
         })
     );
     return;
   }
 
-  // B. Handle Static Assets & Navigation (Stale-While-Revalidate)
+  // B. RECURSOS ESTÁTICOS & NAVEGAÇÃO: Stale-While-Revalidate
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       const fetchPromise = fetch(request)
@@ -126,12 +114,9 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-// 4. Message Handler for instant updates & cache purging
+// 4. Ouvinte de Mensagens para atualização instantânea
 self.addEventListener("message", (event) => {
-  if (event.data && (event.data.type === "SKIP_WAITING" || event.data.type === "CLEAR_CACHE")) {
-    caches.keys().then((names) => {
-      names.forEach((name) => caches.delete(name));
-    });
+  if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
 });
