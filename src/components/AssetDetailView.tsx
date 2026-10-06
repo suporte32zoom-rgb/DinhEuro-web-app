@@ -21,6 +21,7 @@ import {
   DollarSign,
   Briefcase,
   Share2,
+  MessageSquare,
 } from "lucide-react";
 import { formatAssetDisplayPrice } from "../utils/formatters";
 
@@ -31,6 +32,7 @@ interface AssetDetailViewProps {
   isWatchlisted: boolean;
   onToggleWatchlist: (asset: Asset) => void;
   onOpenPortfolio: () => void;
+  onShareToChat?: (text: string) => void;
   allAssets?: Asset[];
 }
 
@@ -41,6 +43,7 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
   isWatchlisted,
   onToggleWatchlist,
   onOpenPortfolio,
+  onShareToChat,
   allAssets = ALL_ASSETS,
 }) => {
   const [aiAnalysis, setAiAnalysis] = useState<{
@@ -132,6 +135,21 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
           </button>
 
           <div className="flex items-center gap-2">
+            {onShareToChat && (
+              <button
+                id="btn-share-to-google-chat"
+                onClick={() => {
+                  const shareMsg = `📊 *DinhEuro Relatório de Ativo*\n*Ativo:* ${asset.name} (${asset.ticker})\n*Cotação:* ${formatPrice(asset.price, asset.currency)} (${asset.changePercent >= 0 ? "+" : ""}${asset.changePercent.toFixed(2)}%)\n*Bolsa:* ${asset.exchange}\n*Máx 52s:* ${formatPrice(asset.metrics.high52w || 0, asset.currency)} | *Mín 52s:* ${formatPrice(asset.metrics.low52w || 0, asset.currency)}\n\n_Compartilhado via DinhEuro.com_`;
+                  onShareToChat(shareMsg);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#00ac47]/20 to-[#00832d]/20 hover:from-[#00ac47]/30 hover:to-[#00832d]/30 border border-emerald-500/40 text-xs font-semibold text-emerald-300 hover:text-white transition-all cursor-pointer shadow-xs"
+                title="Compartilhar análise no Google Chat"
+              >
+                <MessageSquare className="w-3.5 h-3.5 text-[#00ac47]" />
+                <span className="hidden sm:inline">Google Chat</span>
+              </button>
+            )}
+
             <button
               onClick={handleShare}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#161b22] hover:bg-[#21262d] border border-[#30363d] text-xs text-[#8b949e] hover:text-[#e6edf3] transition-colors cursor-pointer"

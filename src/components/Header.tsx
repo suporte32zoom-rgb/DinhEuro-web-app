@@ -13,6 +13,7 @@ import {
   RefreshCw,
   Clock,
   Sparkles,
+  MessageSquare,
 } from "lucide-react";
 
 interface HeaderProps {
@@ -21,6 +22,7 @@ interface HeaderProps {
   onOpenPortfolio: () => void;
   onOpenWatchlist: () => void;
   onOpenCopilot?: () => void;
+  onOpenGoogleChat?: () => void;
   onOpenPwaModal?: () => void;
   isPwaInstallable?: boolean;
   isPwaInstalled?: boolean;
@@ -41,6 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenPortfolio,
   onOpenWatchlist,
   onOpenCopilot,
+  onOpenGoogleChat,
   onOpenPwaModal,
   isPwaInstallable = false,
   isPwaInstalled = false,
@@ -278,6 +281,19 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Sparkles className="w-3.5 h-3.5 text-[#f0883e]" />
               <span className="hidden sm:inline">IA DinhEuro</span>
+            </button>
+          )}
+
+          {/* Google Chat Workspace Button */}
+          {onOpenGoogleChat && (
+            <button
+              id="btn-header-google-chat"
+              onClick={onOpenGoogleChat}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-[#00ac47] to-[#00832d] hover:brightness-110 border border-emerald-500/30 shadow-sm transition-all cursor-pointer"
+              title="Google Chat • Compartilhar Cotações e Conversar com a Equipe"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span className="hidden lg:inline">Google Chat</span>
             </button>
           )}
 

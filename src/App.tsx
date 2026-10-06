@@ -31,6 +31,7 @@ import { PWAInstallModal } from "./components/PWAInstallModal";
 import { PWANotificationBar } from "./components/PWANotificationBar";
 import { PWASplashIntro } from "./components/PWASplashIntro";
 import { DinhEuroAICopilot } from "./components/DinhEuroAICopilot";
+import { GoogleChatModal } from "./components/GoogleChatModal";
 import { Footer } from "./components/Footer";
 import { Sparkles } from "lucide-react";
 import { usePWA } from "./hooks/usePWA";
@@ -91,6 +92,8 @@ export default function App() {
   const [watchlistOpen, setWatchlistOpen] = useState(false);
   const [pwaModalOpen, setPwaModalOpen] = useState(false);
   const [copilotOpen, setCopilotOpen] = useState(false);
+  const [googleChatOpen, setGoogleChatOpen] = useState(false);
+  const [chatShareText, setChatShareText] = useState("");
   const [deepDiveTopic, setDeepDiveTopic] = useState<AIAccordionTopic | null>(null);
 
   // Helper to merge live quotes into asset objects
@@ -355,6 +358,10 @@ export default function App() {
         onOpenPortfolio={() => setPortfolioOpen(true)}
         onOpenWatchlist={() => setWatchlistOpen(true)}
         onOpenCopilot={() => setCopilotOpen(true)}
+        onOpenGoogleChat={() => {
+          setChatShareText("");
+          setGoogleChatOpen(true);
+        }}
         onOpenPwaModal={() => setPwaModalOpen(true)}
         isPwaInstallable={isInstallable}
         isPwaInstalled={isInstalled}
@@ -379,6 +386,10 @@ export default function App() {
             isWatchlisted={watchlistIds.includes(selectedAsset.id)}
             onToggleWatchlist={handleToggleWatchlist}
             onOpenPortfolio={() => setPortfolioOpen(true)}
+            onShareToChat={(text) => {
+              setChatShareText(text);
+              setGoogleChatOpen(true);
+            }}
             allAssets={liveAssets}
           />
         ) : (
@@ -433,6 +444,10 @@ export default function App() {
         onOpenPortfolio={() => setPortfolioOpen(true)}
         onOpenWatchlist={() => setWatchlistOpen(true)}
         onOpenCopilot={() => setCopilotOpen(true)}
+        onOpenGoogleChat={() => {
+          setChatShareText("");
+          setGoogleChatOpen(true);
+        }}
         onOpenPwaModal={() => setPwaModalOpen(true)}
         isPwaInstalled={isInstalled}
         watchlistAssets={watchlistAssets}
@@ -474,6 +489,16 @@ export default function App() {
       <DinhEuroAICopilot
         isOpen={copilotOpen}
         onClose={() => setCopilotOpen(false)}
+      />
+
+      {/* Google Chat Workspace Integration Modal */}
+      <GoogleChatModal
+        isOpen={googleChatOpen}
+        onClose={() => {
+          setGoogleChatOpen(false);
+          setChatShareText("");
+        }}
+        initialShareText={chatShareText}
       />
 
       {/* Floating Action Button for DinhEuro AI */}

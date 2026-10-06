@@ -17,6 +17,7 @@ import {
   ChevronUp,
   Smartphone,
   Check,
+  MessageSquare,
 } from "lucide-react";
 import { BrandLogo } from "./BrandLogo";
 
@@ -44,6 +45,7 @@ interface SidebarDrawerProps {
   onOpenPortfolio: () => void;
   onOpenWatchlist: () => void;
   onOpenCopilot?: () => void;
+  onOpenGoogleChat?: () => void;
   onOpenPwaModal?: () => void;
   isPwaInstalled?: boolean;
   watchlistAssets: Asset[];
@@ -59,6 +61,7 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
   onOpenPortfolio,
   onOpenWatchlist,
   onOpenCopilot,
+  onOpenGoogleChat,
   onOpenPwaModal,
   isPwaInstalled = false,
   watchlistAssets,
@@ -197,6 +200,28 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
               </div>
               <span className="px-2 py-0.5 rounded-full bg-[#00c853]/20 text-[#00c853] text-[10px] font-mono">
                 ONLINE
+              </span>
+            </button>
+          )}
+
+          {/* Google Chat Workspace Button */}
+          {onOpenGoogleChat && (
+            <button
+              id="sidebar-btn-google-chat"
+              onClick={() => {
+                onClose();
+                onOpenGoogleChat();
+              }}
+              className="w-full flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-[#00ac47]/20 to-[#00832d]/20 hover:from-[#00ac47]/30 hover:to-[#00832d]/30 border border-emerald-500/40 text-xs font-bold text-white transition-all cursor-pointer shadow-xs"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="p-1 rounded-lg bg-gradient-to-br from-[#00ac47] to-[#00832d] text-white">
+                  <MessageSquare className="w-3.5 h-3.5" />
+                </div>
+                <span>Google Chat • Workspace</span>
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-[#00c853]/20 text-[#00c853] text-[10px] font-mono">
+                CONECTAR
               </span>
             </button>
           )}

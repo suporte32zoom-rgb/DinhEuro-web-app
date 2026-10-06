@@ -1,64 +1,160 @@
 /**
- * DinhEuro.com - Centralized Resilient Financial API Service
- * Arquitetura Multi-API com padrão Try/Catch, timeout de 5 segundos e persistência em localStorage.
- * 
- * Fontes:
- * - AwesomeAPI: Câmbio e Criptomoedas em tempo real (100% público, sem chave, CORS liberado)
- * - BRAPI: Cotações de Ações da B3 e Índice Ibovespa (^BVSP)
- * - Endpoints DinhEuro Server com fallback inteligente para Hostinger / GitHub Pages
+ * DinhEuro.com - Centralized Resilient HTTP API Service
+ * Cliente HTTP com controle de timeout de 5 segundos, tratamento seguro Try/Catch e
+ * persistência com fallback automático para localStorage para evitar carregamento infinito.
  */
 
 import { LiveQuotePayload } from "./marketDataService";
 import { ALL_ASSETS } from "../data/mockMarketData";
-import { Asset } from "../types/finance";
 
-const TIMEOUT_MS = 5000;
-const CACHE_KEY_QUOTES = "dinheuro_live_quotes_cache";
-const CACHE_KEY_TIMESTAMP = "dinheuro_quotes_timestamp";
+export const DEFAULT_TIMEOUT_MS = 5000;
+export const CACHE_KEY_QUOTES = "dinheuro_live_quotes_cache";
+export const CACHE_KEY_TIMESTAMP = "dinheuro_quotes_timestamp";
+
+export interface RequestOptions extends RequestInit {
+  timeoutMs?: number;
+  cacheKey?: string;
+  useLocalStorageFallback?: boolean;
+}
 
 /**
- * Utilitário de requisição segura com Timeout de 5s e controle de Abort
+ * Cliente HTTP centralizado com tratamento de timeout e AbortController
  */
-export async function safeFetch<T>(
-  url: string,
-  options?: RequestInit,
-  timeoutMs: number = TIMEOUT_MS
-): Promise<T | null> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+export class ApiClient {
+  private defaultTimeout: number;
 
-  try {
-    const res = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-      headers: {
-        Accept: "application/json",
-        "Cache-Control": "no-cache",
-        ...options?.headers,
-      },
-    });
+  constructor(defaultTimeout: number = DEFAULT_TIMEOUT_MS) {
+    this.defaultTimeout = defaultTimeout;
+  }
 
-    clearTimeout(timeoutId);
+  /**
+   * Executa requisição HTTP segura com timeout e captura de erros
+   */
+  public async request<T>(
+    url: string,
+    options: RequestOptions = {}
+  ): Promise<T | null> {
+    const timeout = options.timeoutMs ?? this.defaultTimeout;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
 
-    if (!res.ok) {
-      console.warn(`[ApiService] HTTP ${res.status} para ${url}`);
-      return null;
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+        headers: {
+          Accept: "application/json",
+          "Cache-Control": "no-cache",
+          ...options.headers,
+        },
+      });
+
+      clearTimeout(timer);
+
+      if (!response.ok) {
+        console.warn(`[ApiClient] HTTP ${response.status} ao acessar ${url}`);
+        return this.handleFallback<T>(options);
+      }
+
+      const data = (await response.json()) as T;
+
+      // Salva no localStorage se cacheKey foi fornecida
+      if (options.cacheKey && data) {
+        this.saveToStorage(options.cacheKey, data);
+      }
+
+      return data;
+    } catch (error: any) {
+      clearTimeout(timer);
+      if (error.name === "AbortError") {
+        console.warn(`[ApiClient] Timeout de ${timeout}ms atingido para: ${url}`);
+      } else {
+        console.warn(`[ApiClient] Falha na requisição para ${url}:`, error?.message || error);
+      }
+      return this.handleFallback<T>(options);
     }
+  }
 
-    return (await res.json()) as T;
-  } catch (error: any) {
-    clearTimeout(timeoutId);
-    if (error.name === "AbortError") {
-      console.warn(`[ApiService] Requisição excedeu timeout de ${timeoutMs}ms para: ${url}`);
-    } else {
-      console.warn(`[ApiService] Falha de conexão com ${url}:`, error?.message);
+  /**
+   * Requisições GET convenientes
+   */
+  public async get<T>(url: string, options: RequestOptions = {}): Promise<T | null> {
+    return this.request<T>(url, { ...options, method: "GET" });
+  }
+
+  /**
+   * Requisições POST convenientes
+   */
+  public async post<T>(url: string, body: any, options: RequestOptions = {}): Promise<T | null> {
+    return this.request<T>(url, {
+      ...options,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  /**
+   * Recupera dados salvos em localStorage em caso de falha de rede
+   */
+  private handleFallback<T>(options: RequestOptions): T | null {
+    if (options.useLocalStorageFallback && options.cacheKey) {
+      return this.loadFromStorage<T>(options.cacheKey);
+    }
+    return null;
+  }
+
+  /**
+   * Salva dados em localStorage com timestamp
+   */
+  public saveToStorage(key: string, data: any): void {
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        localStorage.setItem(key, JSON.stringify(data));
+        localStorage.setItem(`${key}_timestamp`, new Date().toISOString());
+      }
+    } catch (err) {
+      console.warn(`[ApiClient] Não foi possível salvar no localStorage (${key}):`, err);
+    }
+  }
+
+  /**
+   * Lê dados do localStorage com tratamento de erro
+   */
+  public loadFromStorage<T>(key: string): T | null {
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        const item = localStorage.getItem(key);
+        if (item) {
+          return JSON.parse(item) as T;
+        }
+      }
+    } catch (err) {
+      console.warn(`[ApiClient] Não foi possível ler do localStorage (${key}):`, err);
     }
     return null;
   }
 }
 
+// Instância Singleton do cliente
+export const apiClient = new ApiClient(DEFAULT_TIMEOUT_MS);
+
 /**
- * 1. AwesomeAPI: Cotações de Câmbio e Criptomoedas em Tempo Real (CORS liberado e sem chave)
+ * Função utilitária global compatível com safeFetch
+ */
+export async function safeFetch<T>(
+  url: string,
+  options?: RequestInit,
+  timeoutMs: number = DEFAULT_TIMEOUT_MS
+): Promise<T | null> {
+  return apiClient.request<T>(url, { ...options, timeoutMs });
+}
+
+/**
+ * 1. AwesomeAPI: Cotações de Câmbio e Criptomoedas em Tempo Real (CORS público e sem chave)
  */
 export async function fetchAwesomeAPICurrencies(): Promise<Record<string, { price: number; changePct: number; high: number; low: number }> | null> {
   const url = `https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL,BTC-BRL,GBP-BRL,JPY-BRL,ETH-BRL?t=${Date.now()}`;
@@ -130,32 +226,21 @@ export async function fetchBrapiStocks(): Promise<Record<string, { price: number
 }
 
 /**
- * 3. Recupera o último estado salvo em localStorage para renderização instantânea sem tela cinza
+ * 3. Recupera o último estado salvo em localStorage
  */
 export function getStoredQuotes(): Record<string, LiveQuotePayload> | null {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY_QUOTES);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
+  return apiClient.loadFromStorage<Record<string, LiveQuotePayload>>(CACHE_KEY_QUOTES);
 }
 
 /**
  * Salva as cotações em localStorage
  */
-export function persistQuotes(quotes: Record<string, LiveQuotePayload>) {
-  try {
-    localStorage.setItem(CACHE_KEY_QUOTES, JSON.stringify(quotes));
-    localStorage.setItem(CACHE_KEY_TIMESTAMP, new Date().toISOString());
-  } catch (e) {
-    console.error("[ApiService] Falha ao salvar em localStorage:", e);
-  }
+export function persistQuotes(quotes: Record<string, LiveQuotePayload>): void {
+  apiClient.saveToStorage(CACHE_KEY_QUOTES, quotes);
 }
 
 /**
- * 4. Pipeline Mestre de Cotações:
+ * 4. Pipeline Mestre de Cotações Resilientes:
  * Consulta primeiro o servidor `/api/market/quotes`. Se falhar (ex: Hostinger estático),
  * consulta AwesomeAPI e BRAPI diretamente do navegador, mesclando com o estado local.
  */
@@ -214,7 +299,6 @@ export async function getResilientMarketQuotes(): Promise<Record<string, LiveQuo
   if (awesomeQuotes) {
     for (const [id, q] of Object.entries(awesomeQuotes)) {
       if (quotes[id]) {
-        const prevPrice = quotes[id].price;
         const change = q.price - (q.price / (1 + q.changePct / 100));
         quotes[id] = {
           ...quotes[id],
