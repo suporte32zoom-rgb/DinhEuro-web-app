@@ -16,20 +16,20 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
   animate = true,
 }) => {
   const sizeMap = {
-    sm: { icon: "w-7 h-7", title: "text-base", sub: "text-[9px]" },
-    md: { icon: "w-9 h-9", title: "text-xl", sub: "text-[10px]" },
-    lg: { icon: "w-12 h-12", title: "text-2xl", sub: "text-xs" },
-    xl: { icon: "w-16 h-16", title: "text-3xl", sub: "text-sm" },
+    sm: { icon: "w-8 h-8", title: "text-base", sub: "text-[9px]" },
+    md: { icon: "w-10 h-10", title: "text-xl", sub: "text-[10px]" },
+    lg: { icon: "w-14 h-14", title: "text-2xl", sub: "text-xs" },
+    xl: { icon: "w-20 h-20", title: "text-3xl", sub: "text-sm" },
   };
 
   const selectedSize = sizeMap[size];
 
   return (
     <div className={`flex items-center gap-2.5 select-none ${className}`}>
-      {/* Official DinhEuro Vector Logo with High-Contrast White Disc for Dark Mode Visibility */}
+      {/* Official Pure White Circular Emblem Container */}
       <div
-        className={`relative ${selectedSize.icon} shrink-0 rounded-full overflow-hidden flex items-center justify-center p-0.5 shadow-lg shadow-black/50 ring-2 ring-white/30 bg-white ${
-          animate ? "group-hover:scale-105 transition-transform duration-200" : ""
+        className={`relative ${selectedSize.icon} shrink-0 rounded-full bg-white p-0.5 shadow-lg shadow-black/40 ring-2 ring-emerald-500/30 flex items-center justify-center overflow-hidden ${
+          animate ? "hover:scale-105 transition-transform duration-200" : ""
         }`}
       >
         <svg
@@ -38,121 +38,119 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
           xmlns="http://www.w3.org/2000/svg"
         >
           <defs>
-            {/* Crisp White / Light Disc Base */}
-            <radialGradient id="dinheuroDiscBg" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="85%" stopColor="#ffffff" />
-              <stop offset="100%" stopColor="#f8fafc" />
-            </radialGradient>
-
-            {/* Continuous Circular Border Gradient (Left: Pale Blue -> Right: Light Green) */}
-            <linearGradient id="dinheuroBorderGrad" x1="0%" y1="50%" x2="100%" y2="50%">
-              <stop offset="0%" stopColor="#38bdf8" />
-              <stop offset="35%" stopColor="#0284c7" />
-              <stop offset="65%" stopColor="#10b981" />
-              <stop offset="100%" stopColor="#4ade80" />
+            {/* Circular Border Gradient */}
+            <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#1f6feb" />
+              <stop offset="50%" stopColor="#10b981" />
+              <stop offset="100%" stopColor="#00c853" />
             </linearGradient>
 
-            {/* Conversion Arrows Gradient (Vibrant Gold / Yellow) */}
-            <linearGradient id="dinheuroArrowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#fbbf24" />
-              <stop offset="50%" stopColor="#f59e0b" />
-              <stop offset="100%" stopColor="#d97706" />
+            {/* Euro Symbol Navy Blue Gradient */}
+            <linearGradient id="euroNavy" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#0f2b5c" />
+              <stop offset="100%" stopColor="#1e3a8a" />
             </linearGradient>
 
-            {/* Dark Navy Blue for Euro Symbol */}
-            <linearGradient id="euroDarkNavyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#0f172a" />
-              <stop offset="50%" stopColor="#1e3a8a" />
-              <stop offset="100%" stopColor="#172554" />
+            {/* Real Symbol Emerald Green Gradient */}
+            <linearGradient id="realGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#00875a" />
+              <stop offset="100%" stopColor="#00c853" />
             </linearGradient>
 
-            {/* Emerald Green for Real Symbol */}
-            <linearGradient id="realEmeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#047857" />
-              <stop offset="50%" stopColor="#059669" />
-              <stop offset="100%" stopColor="#065f46" />
+            {/* Exchange Gold Flow Arrows Gradient */}
+            <linearGradient id="arrowGold" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#f59e0b" />
+              <stop offset="100%" stopColor="#fbbf24" />
             </linearGradient>
-
-            {/* Filter for depth */}
-            <filter id="logoDepth" x="-10%" y="-10%" width="120%" height="120%">
-              <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#000000" floodOpacity="0.25" />
-            </filter>
           </defs>
 
-          {/* 1. Base Circular Container with White Disc and Gradient Ring */}
+          {/* Pure White Circular Background Base */}
+          <circle cx="256" cy="256" r="250" fill="#FFFFFF" />
+
+          {/* Outer Gradient Ring */}
           <circle
             cx="256"
             cy="256"
-            r="236"
-            fill="url(#dinheuroDiscBg)"
-            stroke="url(#dinheuroBorderGrad)"
-            strokeWidth="22"
+            r="238"
+            fill="none"
+            stroke="url(#ringGrad)"
+            strokeWidth="18"
           />
 
-          {/* 2. Top Curved Yellow Arrow (pointing to the LEFT) */}
-          <g filter="url(#logoDepth)">
-            {/* Arc from right to left */}
+          {/* 1. Euro Symbol (€) in Navy Blue on Left */}
+          <g transform="translate(40, 20)">
+            {/* Main C Arc of Euro */}
             <path
-              d="M 392 196 A 166 166 0 0 0 134 184"
+              d="M 230 145 C 195 125 155 130 130 160 C 95 200 95 310 130 350 C 155 380 195 385 230 365"
               fill="none"
-              stroke="url(#dinheuroArrowGrad)"
-              strokeWidth="18"
+              stroke="url(#euroNavy)"
+              strokeWidth="38"
               strokeLinecap="round"
             />
-            {/* Arrowhead at upper left pointing left */}
-            <path
-              d="M 96 194 L 140 160 L 132 188 L 148 218 Z"
-              fill="url(#dinheuroArrowGrad)"
-            />
+            {/* Upper Euro Bar */}
+            <rect x="75" y="222" width="125" height="24" rx="12" fill="url(#euroNavy)" />
+            {/* Lower Euro Bar */}
+            <rect x="75" y="266" width="125" height="24" rx="12" fill="url(#euroNavy)" />
           </g>
 
-          {/* 3. Bottom Curved Yellow Arrow (pointing to the RIGHT) */}
-          <g filter="url(#logoDepth)">
-            {/* Arc from left to right */}
+          {/* 2. Exchange Center Arrows (Golden Yellow Flow ⇄) */}
+          <g fill="url(#arrowGold)" stroke="url(#arrowGold)">
+            {/* Upper Arrow (Left to Right Flow) */}
             <path
-              d="M 120 316 A 166 166 0 0 0 378 328"
+              d="M 215 190 Q 256 168 295 190"
               fill="none"
-              stroke="url(#dinheuroArrowGrad)"
-              strokeWidth="18"
+              strokeWidth="14"
               strokeLinecap="round"
             />
-            {/* Arrowhead at lower right pointing right */}
+            <polygon points="305,190 285,178 288,198" fill="url(#arrowGold)" stroke="none" />
+
+            {/* Lower Arrow (Right to Left Flow) */}
             <path
-              d="M 416 318 L 372 352 L 380 324 L 364 294 Z"
-              fill="url(#dinheuroArrowGrad)"
+              d="M 295 320 Q 256 342 215 320"
+              fill="none"
+              strokeWidth="14"
+              strokeLinecap="round"
             />
+            <polygon points="205,320 225,332 222,312" fill="url(#arrowGold)" stroke="none" />
           </g>
 
-          {/* 4. Center Symbols: Euro (€) in Dark Blue followed by Real (R$) in Green */}
-          <g filter="url(#logoDepth)">
-            {/* Euro Symbol (€) in Dark Navy Blue */}
-            <text
-              x="178"
-              y="288"
-              fontFamily="system-ui, -apple-system, sans-serif, 'Segoe UI', Roboto"
-              fontSize="152"
-              fontWeight="900"
-              fill="url(#euroDarkNavyGrad)"
-              textAnchor="middle"
-              dominantBaseline="middle"
-            >
-              €
-            </text>
+          {/* 3. Brazilian Real Symbol (R$) in Emerald Green on Right */}
+          <g transform="translate(230, 80)">
+            {/* R Letter Pillar */}
+            <rect x="50" y="80" width="34" height="200" rx="14" fill="url(#realGreen)" />
+            
+            {/* R Letter Loop */}
+            <path
+              d="M 75 80 L 125 80 C 160 80 180 102 180 135 C 180 168 160 190 125 190 L 75 190"
+              fill="none"
+              stroke="url(#realGreen)"
+              strokeWidth="34"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            
+            {/* R Letter Diagonal Leg */}
+            <path
+              d="M 120 185 L 175 280"
+              fill="none"
+              stroke="url(#realGreen)"
+              strokeWidth="34"
+              strokeLinecap="round"
+            />
 
-            {/* Real Symbol (R$) in Green */}
-            <text
-              x="322"
-              y="288"
-              fontFamily="system-ui, -apple-system, sans-serif, 'Segoe UI', Roboto"
-              fontSize="126"
-              fontWeight="900"
-              fill="url(#realEmeraldGrad)"
-              textAnchor="middle"
-              dominantBaseline="middle"
-            >
-              R$
-            </text>
+            {/* $ Sign (S with vertical stroke) */}
+            <g transform="translate(160, 50)">
+              {/* Vertical Strike */}
+              <rect x="42" y="55" width="12" height="150" rx="6" fill="url(#realGreen)" />
+              {/* S Curve */}
+              <path
+                d="M 72 85 C 65 72 48 70 38 76 C 24 84 26 102 42 110 L 52 115 C 72 125 74 148 58 160 C 44 170 24 165 18 150"
+                fill="none"
+                stroke="url(#realGreen)"
+                strokeWidth="18"
+                strokeLinecap="round"
+              />
+            </g>
           </g>
         </svg>
       </div>

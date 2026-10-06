@@ -1,9 +1,9 @@
 // DinhEuro Finanças - Progressive Web App Service Worker
-// Versão do Cache Atualizada para Produção e Sincronização em Tempo Real (Hostinger / Live)
-const CACHE_NAME = "dinheuro-v12-production";
+// Versão do Cache Forçada para Produção (Hostinger / dinheuro.com)
+const CACHE_NAME = "dinheuro-pwa-v15-fresh";
 const OFFLINE_URL = "/";
 
-// Apenas recursos estáticos essenciais do App Shell (NUNCA dados financeiros em tempo real)
+// Recursos estáticos essenciais do App Shell
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -35,13 +35,11 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((cacheNames) => {
+      .then((keys) => {
         return Promise.all(
-          cacheNames.map((cache) => {
-            if (cache !== CACHE_NAME) {
-              console.log("[SW] Deletando cache antigo de versão anterior:", cache);
-              return caches.delete(cache);
-            }
+          keys.map((key) => {
+            console.log("[SW] Deletando cache antigo:", key);
+            return caches.delete(key);
           })
         );
       })
@@ -50,9 +48,8 @@ self.addEventListener("activate", (event) => {
 });
 
 // 3. Fetch Event Strategy:
-// - Cotações & Endpoints Financeiros (/api/* e APIs externas): STRICT NETWORK FIRST.
-//   Sempre consulta a rede primeiro para garantir dados 100% atualizados na Hostinger.
-// - Assets estáticos: Stale-While-Revalidate com fallback offline seguro.
+// STRICT NETWORK-FIRST para todas as rotas (estáticas e APIs)
+// Sempre busca a versão mais recente publicada no domínio dinheuro.com antes de recorrer ao cache local.
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
@@ -62,7 +59,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // A. REQUISIÇÕES DE DADOS FINANCEIROS E APIS: NETWORK FIRST OBRIGATÓRIO
+  // A. REQUISIÇÕES DE DADOS FINANCEIROS E APIS (/api/*, AwesomeAPI, BRAPI, HG Brasil)
   if (
     url.pathname.startsWith("/api/") ||
     url.hostname.includes("awesomeapi.com.br") ||
@@ -93,29 +90,29 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // B. RECURSOS ESTÁTICOS & NAVEGAÇÃO: Stale-While-Revalidate
+  // B. RECURSOS ESTÁTICOS, SCRIPTS, ESTILOS E NAVEGAÇÃO: NETWORK-FIRST
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      const fetchPromise = fetch(request)
-        .then((networkResponse) => {
-          if (
-            networkResponse &&
-            networkResponse.status === 200 &&
-            (url.origin === location.origin || url.hostname.includes("fonts"))
-          ) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          if (request.mode === "navigate") {
-            return caches.match(OFFLINE_URL);
-          }
-        });
-
-      return cachedResponse || fetchPromise;
-    })
+    fetch(request)
+      .then((networkResponse) => {
+        if (
+          networkResponse &&
+          networkResponse.status === 200 &&
+          (url.origin === location.origin || url.hostname.includes("fonts"))
+        ) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return networkResponse;
+      })
+      .catch(async () => {
+        const cachedResponse = await caches.match(request);
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        if (request.mode === "navigate") {
+          return caches.match(OFFLINE_URL);
+        }
+      })
   );
 });
 

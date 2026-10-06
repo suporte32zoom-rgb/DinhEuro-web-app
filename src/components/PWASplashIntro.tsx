@@ -20,7 +20,7 @@ export const PWASplashIntro: React.FC = () => {
           setIsVisible(false);
         }, 400);
         return () => clearTimeout(removeTimer);
-      }, 1000);
+      }, 1100);
 
       return () => clearTimeout(timer);
     }
@@ -35,35 +35,36 @@ export const PWASplashIntro: React.FC = () => {
         isFadingOut ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
     >
-      {/* Background ambient radial gradients */}
-      <div className="absolute w-72 h-72 rounded-full bg-[#1f6feb]/20 blur-3xl pointer-events-none -translate-x-12 -translate-y-12" />
-      <div className="absolute w-72 h-72 rounded-full bg-[#00c853]/20 blur-3xl pointer-events-none translate-x-12 translate-y-12" />
+      {/* Background ambient radial glow */}
+      <div className="absolute w-80 h-80 rounded-full bg-[#1f6feb]/25 blur-3xl pointer-events-none -translate-x-14 -translate-y-14" />
+      <div className="absolute w-80 h-80 rounded-full bg-[#00c853]/25 blur-3xl pointer-events-none translate-x-14 translate-y-14" />
 
       {/* Main Center Splash Content */}
       <div className="relative flex flex-col items-center text-center space-y-4 px-6 animate-in zoom-in-95 duration-300">
-        <div className="p-4 rounded-full bg-gradient-to-b from-[#21262d] to-[#161b22] border-2 border-white/20 shadow-[0_0_50px_rgba(56,189,248,0.25)] ring-4 ring-white/10">
+        {/* Official Pure White Logo Showcase Container */}
+        <div className="p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl shadow-emerald-500/20 ring-4 ring-white/10">
           <BrandLogo size="xl" showText={false} animate={false} />
         </div>
 
-        <div className="space-y-1.5 pt-2">
-          <h1 className="text-2xl font-black tracking-tight text-white flex items-center justify-center gap-1.5">
+        <div className="space-y-1.5 pt-3">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center justify-center gap-1.5">
             Dinh<span className="text-[#00c853]">Euro</span>
             <span className="px-2 py-0.5 text-[10px] font-bold bg-[#21262d] text-[#58a6ff] border border-[#30363d] rounded">
               PWA
             </span>
           </h1>
-          <p className="text-xs text-[#8b949e] font-medium tracking-wide">
-            Cotações em Tempo Real • Inteligência com IA
+          <p className="text-xs sm:text-sm text-[#8b949e] font-medium tracking-wide">
+            Cotações em Tempo Real • Mercados Globais & IA
           </p>
         </div>
 
         {/* Loading Pulsing Progress Indicator */}
-        <div className="w-40 h-1 bg-[#21262d] rounded-full overflow-hidden mt-6 relative">
+        <div className="w-44 h-1.5 bg-[#21262d] rounded-full overflow-hidden mt-6 relative">
           <div className="h-full bg-gradient-to-r from-[#1f6feb] via-[#10b981] to-[#00c853] w-full animate-pulse" />
         </div>
 
-        <div className="flex items-center gap-1.5 text-[11px] text-[#58a6ff] font-mono pt-2">
-          <Sparkles className="w-3.5 h-3.5 text-[#00c853]" />
+        <div className="flex items-center gap-1.5 text-xs text-[#58a6ff] font-mono pt-2">
+          <Sparkles className="w-3.5 h-3.5 text-[#00c853] animate-spin-slow" />
           <span>Motor Financeiro Conectado</span>
         </div>
       </div>
