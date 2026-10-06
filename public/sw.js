@@ -1,6 +1,6 @@
 // DinhEuro Finanças - Progressive Web App Service Worker
-// Versão do Cache Atualizada para Sincronização em Tempo Real (Hostinger / Live)
-const CACHE_NAME = "dinheuro-v6-live";
+// Versão do Cache Atualizada para Produção e Sincronização em Tempo Real (Hostinger / Live)
+const CACHE_NAME = "dinheuro-v12-production";
 const OFFLINE_URL = "/";
 
 // Apenas recursos estáticos essenciais do App Shell (NUNCA dados financeiros em tempo real)
@@ -50,7 +50,7 @@ self.addEventListener("activate", (event) => {
 });
 
 // 3. Fetch Event Strategy:
-// - Cotações & Endpoints Financeiros (/api/*): STRICT NETWORK FIRST com no-store e timeout.
+// - Cotações & Endpoints Financeiros (/api/* e APIs externas): STRICT NETWORK FIRST.
 //   Sempre consulta a rede primeiro para garantir dados 100% atualizados na Hostinger.
 // - Assets estáticos: Stale-While-Revalidate com fallback offline seguro.
 self.addEventListener("fetch", (event) => {
@@ -63,7 +63,12 @@ self.addEventListener("fetch", (event) => {
   }
 
   // A. REQUISIÇÕES DE DADOS FINANCEIROS E APIS: NETWORK FIRST OBRIGATÓRIO
-  if (url.pathname.startsWith("/api/")) {
+  if (
+    url.pathname.startsWith("/api/") ||
+    url.hostname.includes("awesomeapi.com.br") ||
+    url.hostname.includes("brapi.dev") ||
+    url.hostname.includes("hgbrasil.com")
+  ) {
     event.respondWith(
       fetch(request, { cache: "no-store" })
         .then((networkResponse) => {

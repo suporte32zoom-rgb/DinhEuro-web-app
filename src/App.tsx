@@ -14,6 +14,7 @@ import {
   fetchLiveMovers,
   LiveQuotePayload,
 } from "./services/marketDataService";
+import { getStoredQuotes } from "./services/apiService";
 import { Header } from "./components/Header";
 import { NavigationTabs } from "./components/NavigationTabs";
 import { DynamicIndicesCarousel } from "./components/DynamicIndicesCarousel";
@@ -38,8 +39,32 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<RegionalTab>("América Latina");
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
 
-  // Live real-time market feeds state
-  const [liveAssets, setLiveAssets] = useState<Asset[]>(ALL_ASSETS);
+  // Live real-time market feeds state (Pre-loaded from localStorage cache)
+  const [liveAssets, setLiveAssets] = useState<Asset[]>(() => {
+    const stored = getStoredQuotes();
+    if (!stored) return ALL_ASSETS;
+    return ALL_ASSETS.map((asset) => {
+      const q = stored[asset.id];
+      if (!q) return asset;
+      return {
+        ...asset,
+        price: q.price,
+        change: q.change,
+        changePercent: q.changePercent,
+        sparkline: q.sparkline && q.sparkline.length > 0 ? q.sparkline : asset.sparkline,
+        metrics: {
+          ...asset.metrics,
+          open: q.open !== undefined ? q.open : asset.metrics.open,
+          high: q.high !== undefined ? q.high : asset.metrics.high,
+          low: q.low !== undefined ? q.low : asset.metrics.low,
+          high52w: q.high52w !== undefined ? q.high52w : asset.metrics.high52w,
+          low52w: q.low52w !== undefined ? q.low52w : asset.metrics.low52w,
+          prevClose: q.price - q.change,
+          volume: q.volume || asset.metrics.volume,
+        },
+      };
+    });
+  });
   const [liveNews, setLiveNews] = useState<NewsItem[] | null>(null);
   const [liveMovers, setLiveMovers] = useState<{
     mostActive: MarketMoverItem[];
