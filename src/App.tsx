@@ -32,6 +32,8 @@ import { PWANotificationBar } from "./components/PWANotificationBar";
 import { PWASplashIntro } from "./components/PWASplashIntro";
 import { DinhEuroAICopilot } from "./components/DinhEuroAICopilot";
 import { GoogleChatModal } from "./components/GoogleChatModal";
+import { NotificationSettingsModal } from "./components/NotificationSettingsModal";
+import { notificationService, NotificationSettings } from "./services/notificationService";
 import { Footer } from "./components/Footer";
 import { Sparkles } from "lucide-react";
 import { usePWA } from "./hooks/usePWA";
@@ -96,11 +98,45 @@ export default function App() {
   const [chatShareText, setChatShareText] = useState("");
   const [deepDiveTopic, setDeepDiveTopic] = useState<AIAccordionTopic | null>(null);
 
-  // Helper to merge live quotes into asset objects
+  // Push Notifications Modal & Preferences State
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [alertTargetAsset, setAlertTargetAsset] = useState<Asset | null>(null);
+  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(() =>
+    notificationService.getSettings()
+  );
+
+  useEffect(() => {
+    const unsub = notificationService.subscribe((newSettings) => {
+      setNotificationSettings(newSettings);
+    });
+    return unsub;
+  }, []);
+
+  // Listen for Service Worker push notification clicks to deep-link into assets
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data && event.data.type === "NOTIFICATION_OPEN_ASSET" && event.data.assetId) {
+          const match = liveAssets.find(
+            (a) =>
+              a.id === event.data.assetId ||
+              a.ticker.toUpperCase() === String(event.data.assetId).toUpperCase()
+          );
+          if (match) {
+            setSelectedAsset(match);
+          }
+        }
+      };
+      navigator.serviceWorker.addEventListener("message", handleMessage);
+      return () => navigator.serviceWorker.removeEventListener("message", handleMessage);
+    }
+  }, [liveAssets]);
+
+  // Helper to merge live quotes into asset objects and evaluate alert thresholds
   const mergeQuotesIntoAssets = useCallback(
     (quotes: Record<string, LiveQuotePayload>) => {
       setLiveAssets((prevAssets) => {
-        return prevAssets.map((asset) => {
+        const updatedList = prevAssets.map((asset) => {
           const quote = quotes[asset.id];
           if (!quote) return asset;
 
@@ -127,6 +163,11 @@ export default function App() {
 
           return updated;
         });
+
+        // Trigger real-time price alerts evaluation on desktop & mobile
+        notificationService.evaluateAssetPrices(updatedList);
+
+        return updatedList;
       });
 
       // Keep selectedAsset updated in real time if open
@@ -362,7 +403,18 @@ export default function App() {
           setChatShareText("");
           setGoogleChatOpen(true);
         }}
+        onOpenNotifications={() => {
+          setAlertTargetAsset(null);
+          setNotificationsOpen(true);
+        }}
         onOpenPwaModal={() => setPwaModalOpen(true)}
+        notificationsEnabled={
+          notificationSettings.enabled &&
+          typeof window !== "undefined" &&
+          "Notification" in window &&
+          Notification.permission === "granted"
+        }
+        notificationsCount={notificationSettings.assetAlerts.filter((a) => a.enabled).length}
         isPwaInstallable={isInstallable}
         isPwaInstalled={isInstalled}
         onSelectAsset={handleSelectAsset}
@@ -389,6 +441,10 @@ export default function App() {
             onShareToChat={(text) => {
               setChatShareText(text);
               setGoogleChatOpen(true);
+            }}
+            onOpenAlertModal={(asset) => {
+              setAlertTargetAsset(asset);
+              setNotificationsOpen(true);
             }}
             allAssets={liveAssets}
           />
@@ -448,6 +504,10 @@ export default function App() {
           setChatShareText("");
           setGoogleChatOpen(true);
         }}
+        onOpenNotifications={() => {
+          setAlertTargetAsset(null);
+          setNotificationsOpen(true);
+        }}
         onOpenPwaModal={() => setPwaModalOpen(true)}
         isPwaInstalled={isInstalled}
         watchlistAssets={watchlistAssets}
@@ -499,6 +559,17 @@ export default function App() {
           setChatShareText("");
         }}
         initialShareText={chatShareText}
+      />
+
+      {/* Real-time Push Notifications & Market Alerts Settings Modal */}
+      <NotificationSettingsModal
+        isOpen={notificationsOpen}
+        onClose={() => {
+          setNotificationsOpen(false);
+          setAlertTargetAsset(null);
+        }}
+        liveAssets={liveAssets}
+        initialAsset={alertTargetAsset}
       />
 
       {/* Floating Action Button for DinhEuro AI */}

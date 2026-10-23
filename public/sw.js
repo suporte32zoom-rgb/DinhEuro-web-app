@@ -122,3 +122,101 @@ self.addEventListener("message", (event) => {
     self.skipWaiting();
   }
 });
+
+// 5. PUSH NOTIFICATIONS & REAL-TIME ALERTS (Desktop & Mobile)
+// Recebe eventos de push do servidor ou triggers do sistema
+self.addEventListener("push", (event) => {
+  console.log("[SW] Push event received:", event);
+
+  let data = {
+    title: "DinhEuro • Alerta de Mercado",
+    body: "Atualização de cotação ou notícia financeira em tempo real.",
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
+    tag: "dinheuro-market-alert",
+    url: "/",
+    data: { url: "/" },
+  };
+
+  if (event.data) {
+    try {
+      const parsed = event.data.json();
+      data = { ...data, ...parsed };
+      if (!data.data) {
+        data.data = { url: data.url || "/" };
+      }
+    } catch {
+      data.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: data.icon || "/icon-192.png",
+    badge: data.badge || "/icon-192.png",
+    image: data.image || undefined,
+    tag: data.tag || "dinheuro-alert",
+    renotify: true,
+    vibrate: [120, 60, 120, 60, 200], // Haptic vibration on mobile devices
+    requireInteraction: false,
+    silent: false,
+    timestamp: Date.now(),
+    data: data.data || { url: data.url || "/" },
+    actions: [
+      {
+        action: "view_market",
+        title: "📈 Ver no DinhEuro",
+      },
+      {
+        action: "dismiss",
+        title: "Fechar",
+      },
+    ],
+  };
+
+  event.waitUntil(self.registration.showNotification(data.title, options));
+});
+
+// 6. Notification Click Handler (Deep-Linking & Window Focus)
+self.addEventListener("notificationclick", (event) => {
+  console.log("[SW] Notification clicked:", event.notification.tag, event.action);
+  event.notification.close();
+
+  if (event.action === "dismiss") {
+    return;
+  }
+
+  const targetUrl = (event.notification.data && event.notification.data.url) || "/";
+
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
+        // If window already open, focus it and navigate
+        for (const client of clientList) {
+          if ("focus" in client) {
+            client.focus();
+            if ("navigate" in client && targetUrl !== "/") {
+              client.navigate(targetUrl);
+            }
+            if (event.notification.data && event.notification.data.assetId) {
+              client.postMessage({
+                type: "NOTIFICATION_OPEN_ASSET",
+                assetId: event.notification.data.assetId,
+              });
+            }
+            return client;
+          }
+        }
+        // Otherwise open a new window
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(targetUrl);
+        }
+      })
+  );
+});
+
+// 7. Notification Close Handler
+self.addEventListener("notificationclose", (event) => {
+  console.log("[SW] Notification dismissed by user:", event.notification.tag);
+});

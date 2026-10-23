@@ -22,6 +22,7 @@ import {
   Briefcase,
   Share2,
   MessageSquare,
+  Bell,
 } from "lucide-react";
 import { formatAssetDisplayPrice } from "../utils/formatters";
 
@@ -33,6 +34,7 @@ interface AssetDetailViewProps {
   onToggleWatchlist: (asset: Asset) => void;
   onOpenPortfolio: () => void;
   onShareToChat?: (text: string) => void;
+  onOpenAlertModal?: (asset: Asset) => void;
   allAssets?: Asset[];
 }
 
@@ -44,6 +46,7 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
   onToggleWatchlist,
   onOpenPortfolio,
   onShareToChat,
+  onOpenAlertModal,
   allAssets = ALL_ASSETS,
 }) => {
   const [aiAnalysis, setAiAnalysis] = useState<{
@@ -180,6 +183,18 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
                 </>
               )}
             </button>
+
+            {onOpenAlertModal && (
+              <button
+                id="btn-asset-price-alert"
+                onClick={() => onOpenAlertModal(asset)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#161b22] hover:bg-[#21262d] text-[#58a6ff] hover:text-white border border-[#30363d] hover:border-[#58a6ff]/50 transition-all cursor-pointer shadow-xs"
+                title="Configurar alerta de variação de preço para este ativo"
+              >
+                <Bell className="w-3.5 h-3.5 text-[#58a6ff]" />
+                <span className="hidden sm:inline">Criar Alerta</span>
+              </button>
+            )}
 
             <button
               onClick={onOpenPortfolio}

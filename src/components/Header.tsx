@@ -14,6 +14,8 @@ import {
   Clock,
   Sparkles,
   MessageSquare,
+  Bell,
+  BellRing,
 } from "lucide-react";
 
 interface HeaderProps {
@@ -23,7 +25,10 @@ interface HeaderProps {
   onOpenWatchlist: () => void;
   onOpenCopilot?: () => void;
   onOpenGoogleChat?: () => void;
+  onOpenNotifications?: () => void;
   onOpenPwaModal?: () => void;
+  notificationsEnabled?: boolean;
+  notificationsCount?: number;
   isPwaInstallable?: boolean;
   isPwaInstalled?: boolean;
   onSelectAsset: (asset: Asset) => void;
@@ -44,7 +49,10 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenWatchlist,
   onOpenCopilot,
   onOpenGoogleChat,
+  onOpenNotifications,
   onOpenPwaModal,
+  notificationsEnabled = false,
+  notificationsCount = 0,
   isPwaInstallable = false,
   isPwaInstalled = false,
   onSelectAsset,
@@ -294,6 +302,37 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <MessageSquare className="w-3.5 h-3.5" />
               <span className="hidden lg:inline">Google Chat</span>
+            </button>
+          )}
+
+          {/* Real-time Notifications & Alerts Button */}
+          {onOpenNotifications && (
+            <button
+              id="btn-header-notifications"
+              onClick={onOpenNotifications}
+              className={`relative flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
+                notificationsEnabled
+                  ? "bg-[#161b22] text-[#58a6ff] border-[#30363d] hover:border-[#58a6ff] hover:bg-[#21262d]"
+                  : "bg-[#161b22] text-[#8b949e] border-[#30363d] hover:text-[#e6edf3] hover:bg-[#21262d]"
+              }`}
+              title="Notificações Push & Alertas de Cotação em Tempo Real"
+            >
+              <div className="relative">
+                {notificationsEnabled ? (
+                  <BellRing className="w-4 h-4 text-[#58a6ff]" />
+                ) : (
+                  <Bell className="w-4 h-4" />
+                )}
+                {notificationsEnabled && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-[#00c853] animate-pulse" />
+                )}
+              </div>
+              <span className="hidden xl:inline">Alertas</span>
+              {notificationsCount > 0 && (
+                <span className="px-1.5 py-0.2 bg-[#58a6ff]/20 text-[#58a6ff] rounded-full text-[10px] font-bold">
+                  {notificationsCount}
+                </span>
+              )}
             </button>
           )}
 

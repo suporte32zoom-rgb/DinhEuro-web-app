@@ -18,6 +18,7 @@ import {
   Smartphone,
   Check,
   MessageSquare,
+  Bell,
 } from "lucide-react";
 import { BrandLogo } from "./BrandLogo";
 
@@ -46,6 +47,7 @@ interface SidebarDrawerProps {
   onOpenWatchlist: () => void;
   onOpenCopilot?: () => void;
   onOpenGoogleChat?: () => void;
+  onOpenNotifications?: () => void;
   onOpenPwaModal?: () => void;
   isPwaInstalled?: boolean;
   watchlistAssets: Asset[];
@@ -62,6 +64,7 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
   onOpenWatchlist,
   onOpenCopilot,
   onOpenGoogleChat,
+  onOpenNotifications,
   onOpenPwaModal,
   isPwaInstalled = false,
   watchlistAssets,
@@ -244,6 +247,27 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
               </div>
               <span className="px-2 py-0.5 rounded-full bg-[#00c853]/20 text-[#00c853] text-[10px] font-mono">
                 {isPwaInstalled ? "ATIVO" : "INSTALAR"}
+              </span>
+            </button>
+          )}
+
+          {onOpenNotifications && (
+            <button
+              id="sidebar-btn-notifications"
+              onClick={() => {
+                onClose();
+                onOpenNotifications();
+              }}
+              className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#0e1117] hover:bg-[#21262d] border border-[#30363d] text-xs font-semibold text-[#e6edf3] transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="p-1 rounded-lg bg-[#58a6ff]/20 text-[#58a6ff]">
+                  <Bell className="w-3.5 h-3.5" />
+                </div>
+                <span>Alertas & Notificações PWA</span>
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-[#58a6ff]/20 text-[#58a6ff] text-[10px] font-mono">
+                CONFIGURAR
               </span>
             </button>
           )}

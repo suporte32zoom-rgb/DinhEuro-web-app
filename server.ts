@@ -529,6 +529,82 @@ app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", service: "DinhEuro Financial Real-time Engine", timestamp: new Date().toISOString() });
 });
 
+// ==========================================
+// PWA PUSH NOTIFICATIONS & SUBSCRIBER MANAGEMENT
+// ==========================================
+interface ClientSubscription {
+  id: string;
+  deviceType: string;
+  permission: string;
+  userAgent: string;
+  subscription: any;
+  settings?: any;
+  updatedAt: string;
+}
+
+const pushSubscriptionsMap = new Map<string, ClientSubscription>();
+
+// Endpoint to register/update PWA push subscription from Desktop or Mobile
+app.post("/api/notifications/subscribe", (req, res) => {
+  try {
+    const { deviceType, permission, userAgent, subscription, settings } = req.body;
+    const clientId = subscription?.endpoint || `${deviceType}-${Date.now()}`;
+
+    pushSubscriptionsMap.set(clientId, {
+      id: clientId,
+      deviceType: deviceType || "unknown",
+      permission: permission || "granted",
+      userAgent: userAgent || "",
+      subscription: subscription || null,
+      settings: settings || null,
+      updatedAt: new Date().toISOString(),
+    });
+
+    console.log(`[Notification Engine] Subscriber registered: ${deviceType} (${pushSubscriptionsMap.size} active)`);
+
+    res.json({
+      success: true,
+      message: "Dispositivo registrado para alertas push em tempo real com sucesso.",
+      subscriberCount: pushSubscriptionsMap.size,
+      registeredAt: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    console.error("[Notification Engine] Erro ao registrar subscrição:", error);
+    res.status(500).json({ success: false, error: "Erro ao registrar subscrição de alertas." });
+  }
+});
+
+// Endpoint to query notification server status
+app.get("/api/notifications/status", (_req, res) => {
+  res.json({
+    success: true,
+    activeSubscribers: pushSubscriptionsMap.size,
+    timestamp: new Date().toISOString(),
+    capabilities: {
+      assetPriceAlerts: true,
+      breakingNews: true,
+      macroEvents: ["copom", "fed", "ecb", "circuit_breaker"],
+      platforms: ["desktop", "mobile_android", "mobile_ios_pwa"],
+    },
+  });
+});
+
+// Endpoint to simulate/broadcast a market alert to clients
+app.post("/api/notifications/test", (req, res) => {
+  const { title, body, type, ticker } = req.body;
+  res.json({
+    success: true,
+    message: "Disparo de alerta processado pela central de mensageria DinhEuro.",
+    alert: {
+      title: title || "🔔 DinhEuro • Alerta de Cotação",
+      body: body || "Oscilação significativa detectada em ativo monitorado.",
+      type: type || "asset",
+      ticker: ticker || "PETR4",
+      timestamp: new Date().toISOString(),
+    },
+  });
+});
+
 // Helper: Scan project source files to package for Hostinger
 function getProjectFilesList(dir: string, baseDir: string = dir): Array<{ path: string; content: string }> {
   const results: Array<{ path: string; content: string }> = [];

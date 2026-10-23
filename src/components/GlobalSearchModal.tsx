@@ -125,7 +125,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                   <div className="text-right shrink-0 flex items-center gap-4">
                     <div>
                       <div className="text-xs sm:text-sm font-mono font-bold text-[#e6edf3]">
-                        {formatAssetDisplayPrice(asset.price, asset.currency, asset.id, asset.ticker, asset.name)}
+                        {formatAssetDisplayPrice(asset.price, asset.currency)}
                       </div>
                       <div
                         className={`text-xs font-mono font-semibold flex items-center justify-end gap-0.5 ${

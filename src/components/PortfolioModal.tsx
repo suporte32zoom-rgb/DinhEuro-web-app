@@ -155,7 +155,7 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({
               }`}
             >
               {totalPL >= 0 ? <TrendingUp className="w-4 h-4 shrink-0" /> : <TrendingDown className="w-4 h-4 shrink-0" />}
-              <span>{formatCurrencyBRL(totalPL, true)}</span>
+              <span>{formatCurrencyBRL(totalPL)}</span>
               <span className="text-xs">({totalPLPct >= 0 ? "+" : ""}{totalPLPct.toFixed(2)}%)</span>
             </div>
           </div>
@@ -306,7 +306,7 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({
                           isProfit ? "text-[#00c853]" : "text-[#ff5252]"
                         }`}
                       >
-                        {isProfit ? "+" : ""}{formatCurrencyBRL(pos.profitLoss, true)} ({isProfit ? "+" : ""}{pos.profitLossPct.toFixed(2)}%)
+                        {isProfit ? "+" : ""}{formatCurrencyBRL(pos.profitLoss)} ({isProfit ? "+" : ""}{pos.profitLossPct.toFixed(2)}%)
                       </div>
                     </div>
 

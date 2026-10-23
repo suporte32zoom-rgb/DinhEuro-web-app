@@ -98,7 +98,7 @@ export const WatchlistModal: React.FC<WatchlistModalProps> = ({
 
                     <div className="text-right">
                       <div className="text-xs font-mono font-bold text-white">
-                        {formatAssetDisplayPrice(asset.price, asset.currency, asset.id, asset.ticker, asset.name)}
+                        {formatAssetDisplayPrice(asset.price, asset.currency)}
                       </div>
                       <div
                         className={`text-[11px] font-mono font-semibold flex items-center justify-end gap-0.5 ${
