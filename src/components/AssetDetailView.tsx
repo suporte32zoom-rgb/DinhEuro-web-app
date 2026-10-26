@@ -264,13 +264,16 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({
           </div>
         </div>
 
-        {/* 2. Interactive SVG Chart Component with Live Data */}
+        {/* 2. Interactive SVG Chart Component with Live Data & Dual-Ticker Comparison */}
         <InteractiveChart
           historicalData={asset.historical}
           annotations={asset.annotations}
           currency={asset.currency}
           isPositiveOverall={isPositive}
           assetTicker={asset.ticker}
+          assetName={asset.name}
+          allAssets={currentPool}
+          onSelectAsset={onSelectAsset}
         />
 
         {/* 3. Real-Time Financial Metrics Grid */}

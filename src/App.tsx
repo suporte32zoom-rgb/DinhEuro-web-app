@@ -18,6 +18,7 @@ import { getStoredQuotes } from "./services/apiService";
 import { Header } from "./components/Header";
 import { NavigationTabs } from "./components/NavigationTabs";
 import { DynamicIndicesCarousel } from "./components/DynamicIndicesCarousel";
+import { GlobalEconomyWidget } from "./components/GlobalEconomyWidget";
 import { AIMarketSummaryAccordion } from "./components/AIMarketSummaryAccordion";
 import { MarketMoversGrid } from "./components/MarketMoversGrid";
 import { NewsSection } from "./components/NewsSection";
@@ -466,6 +467,11 @@ export default function App() {
               onSelectAsset={handleSelectAsset}
               isLoading={isRefreshing && liveAssets.length === 0}
             />
+
+            {/* Global Economy & AwesomeAPI Live Indicators */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full mt-2">
+              <GlobalEconomyWidget />
+            </div>
 
             {/* AI Market Summary Accordion */}
             <AIMarketSummaryAccordion
